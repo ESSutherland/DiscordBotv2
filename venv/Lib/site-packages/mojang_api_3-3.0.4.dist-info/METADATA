@@ -1,0 +1,124 @@
+Metadata-Version: 2.1
+Name: mojang-api-3
+Version: 3.0.4
+Summary: A full Python wrapper of Mojang's API and Authentication API.
+Home-page: https://github.com/Kiln707/mojang-api
+Author: Synchronous, Kiln707
+License: MIT
+Keywords: mojang minecraft mc api authentication auth
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Requires-Python: >=3.5.*
+Requires-Dist: python-box
+Requires-Dist: requests
+
+mojang-api
+==========
+
+|python-versions| |implementation| |license|
+
+A full Python wrapper of Mojang's `API`_ and `Authentication API`_.
+
+.. |python-versions| image:: https://img.shields.io/pypi/pyversions/mojang-api.svg
+    :alt: Python Versions
+    :scale: 100%
+    :target: https://pypi.python.org/project/mojang-api-3/
+
+.. |implementation| image:: https://img.shields.io/pypi/implementation/mojang-api.svg
+    :alt: Implementation
+    :scale: 100%
+    :target: https://pypi.python.org/project/mojang-api-3/
+
+.. |license| image:: https://img.shields.io/github/license/SynchronousX/mojang-api.svg
+    :alt: License
+    :scale: 100%
+    :target: LICENSE
+
+.. _API: http://wiki.vg/Mojang_API
+.. _Authentication API: http://wiki.vg/Authentication
+
+
+
+version:3.0.4
+
+Installation
+------------
+``$ pip install mojang-api-3``
+
+Usage
+------------
+Using this API will often return dicts:
+    1. If response is empty, dict will contain response object.
+        Response['response'] contains Response object (Get status code via Response['response'].status_code)
+    2. If response contains data, dict will contain response object and data
+        Response['response'] contains Response object (Get status code via Response['response'].status_code)
+        Response['data'] contains response data
+
+
+**Checking status of Mojang servers:**
+
+``$ from mojang_api import get_status``
+
+``$ response = get_status() ``
+
+Response will be dict containing a Requests Response object and Response Data.
+
+Response['response'] contains Response object (Get status code via Response['response'].status_code)
+
+Response['data'] contains List of dicts with key of the servername and value of it's status
+
+**Getting UUID from player name:**
+
+``$ from mojang_api import Player``
+
+``$ player = Player(username=myUsername)``
+
+``$ player.username``
+
+**Authenticating player:**
+
+``$ from mojang_api import Player``
+
+``$ player = Player(username=myUsername)``
+
+``$ player.authenticate(email_address_or_legacy_username, password)``
+
+
+Player authenticate will populate it's Access and Client Tokens, Username and UUID of the player.
+
+
+**Check if player is authenticated with:**
+
+``$ player.is_authenticated``
+
+
+**Creating Player with access and client tokens:**
+
+``$ from mojang_api import Player``
+
+``$ player=Player(username=Last_saved_username)``
+
+``$ player.tokens = (access_token, client_token)``
+
+Once player.tokens is set, it will validate and refresh tokens and save the current Username, UUID, and refreshed Access and Client Tokens
+
+
+**Signing out Player:**
+
+``$ from mojang_api import Player``
+
+``$ player = Player(username=myUsername)``
+
+``$ player.authenticate(email_address_or_legacy_username, password)``
+
+``$ player.signout()``
+
+player.signout() will invalidate the tokens that are saved, which has the same effect as logging out.
+
+

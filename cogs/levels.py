@@ -92,7 +92,7 @@ class Levels(commands.Cog):
         )
 
     @commands.command(name='leveltop')
-    async def leveltop(self, ctx):
+    async def level_top(self, ctx):
         first = ':first_place:'
         second = ':second_place:'
         third = ':third_place:'
@@ -138,6 +138,7 @@ class Levels(commands.Cog):
         )
 
     @commands.command(name='setexp')
+    @commands.has_permissions(administrator=True)
     async def set_exp(self, ctx, exp):
         if int(exp) > 0:
             cfg_file = open('config.ini', 'w')

@@ -22,10 +22,20 @@ class Minecraft(commands.Cog):
         db.execute('CREATE TABLE IF NOT EXISTS minecraft_users (user_id text unique, mc_username text)')
         db.execute('CREATE TABLE IF NOT EXISTS minecraft_rcon (server_ip text, port text, password text)')
         connection.commit()
+
+        for user in await get_all_whitelists():
+            if not await helpers.role_helper.has_role(
+                self.client.guilds[0],
+                int(user[0]),
+                'sub'
+            ):
+                await whitelist_remove_user(user[0])
+
         print('Minecraft Module Loaded.')
 
     # COMMANDS #
     @commands.command(name="whitelist")
+    @commands.check(helpers.role_helper.is_sub)
     async def whitelist(self, ctx, username):
 
         print(f'{ctx.author}({ctx.author.id}) executed Whitelist command.')
@@ -37,26 +47,19 @@ class Minecraft(commands.Cog):
         if auth_server_status == 'green':
             if await is_rcon_enabled():
                 if await helpers.role_helper.is_role_defined('sub'):
-                    if await helpers.role_helper.has_role(ctx.guild, ctx.author.id, 'sub'):
-                        try:
-                            player = Player(username=username)
-                            await whitelist_add_user(ctx.author.id, username)
-                            await ctx.send(
-                                embed=await helpers.embed_helper.create_success_embed(
-                                    f'Set whitelist for {ctx.author.mention}: `{player.username}`',
-                                    self.client.guilds[0].get_member(self.client.user.id).color
-                                )
+                    try:
+                        player = Player(username=username)
+                        await whitelist_add_user(ctx.author.id, username)
+                        await ctx.send(
+                            embed=await helpers.embed_helper.create_success_embed(
+                                f'Set whitelist for {ctx.author.mention}: `{player.username}`',
+                                self.client.guilds[0].get_member(self.client.user.id).color
                             )
-                        except:
-                            await ctx.send(
-                                embed=await helpers.embed_helper.create_error_embed(
-                                    f'`{username}` is not a valid Minecraft account.'
-                                )
-                            )
-                    else:
+                        )
+                    except:
                         await ctx.send(
                             embed=await helpers.embed_helper.create_error_embed(
-                                'You must be a Subscriber to use this command.'
+                                f'`{username}` is not a valid Minecraft account.'
                             )
                         )
                 else:
@@ -79,6 +82,7 @@ class Minecraft(commands.Cog):
             )
 
     @commands.command(name='setrcon')
+    @commands.has_permissions(administrator=True)
     async def set_rcon(self, ctx, rcon_ip, rcon_port, rcon_password):
 
         print(f'{ctx.author}({ctx.author.id}) executed SetRCON command.')
@@ -172,6 +176,12 @@ async def is_rcon_enabled():
         return True
     else:
         return False
+
+async def get_all_whitelists():
+    db.execute('SELECT * FROM minecraft_users')
+    results = db.fetchall()
+
+    return results
 
 def setup(client):
     client.add_cog(Minecraft(client))

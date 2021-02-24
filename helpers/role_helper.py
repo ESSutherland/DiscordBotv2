@@ -29,8 +29,7 @@ async def has_role(guild, user_id,  role_name):
 
 async def is_mod(ctx):
     if await is_role_defined('mod'):
-        if (await has_role(ctx.guild, ctx.author.id, 'mod') or
-                discord.Permissions.administrator in ctx.author.guild_permissions):
+        if await has_role(ctx.guild, ctx.author.id, 'mod') or ctx.author.guild_permissions.administrator:
             return True
         else:
             return False
@@ -40,7 +39,8 @@ async def is_mod(ctx):
 async def is_booster(ctx):
     if await is_role_defined('booster'):
         if (await has_role(ctx.guild, ctx.author.id, 'booster') or
-                discord.Permissions.administrator in ctx.author.guild_permissions):
+                ctx.author.guild_permissions.administrator
+        ):
             return True
         else:
             return False
@@ -50,7 +50,8 @@ async def is_booster(ctx):
 async def is_sub(ctx):
     if await is_role_defined('sub'):
         if (await has_role(ctx.guild, ctx.author.id, 'sub') or
-                discord.Permissions.administrator in ctx.author.guild_permissions):
+                ctx.author.guild_permissions.administrator
+        ):
             return True
         else:
             return False

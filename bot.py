@@ -43,6 +43,8 @@ async def on_ready():
         activity=discord.Game(name=f'{bot_message} | {bot_prefix}help')
     )
 
+
+
     print(f'Bot ({client.user}) is now online')
 
 # JOIN EVENT #
@@ -53,6 +55,13 @@ async def on_member_join(member):
 # LEAVE EVENT #
 @client.event
 async def on_member_remove(member):
+
+    if await cogs.colors.has_color_role(member.id):
+        await cogs.colors.delete_color_role(client.guilds[0], member.id)
+
+    if await cogs.minecraft.has_whitelist(member.id):
+        await cogs.minecraft.whitelist_remove_user(member.id)
+
     print(f'{member}({member.id}) has left the server.')
 
 # UPDATE EVENT #
@@ -154,7 +163,7 @@ async def bot(ctx):
 @client.command()
 @commands.has_permissions(administrator=True)
 async def setrole(ctx, role_name, *, text):
-    valid_roles = ['sub', 'booster', 'mod', 'user']
+    valid_roles = ['sub', 'booster', 'mod', 'user', 'movie', 'game']
     mentioned_roles = ctx.message.role_mentions
     role_name = role_name.lower()
     if len(mentioned_roles) > 0:

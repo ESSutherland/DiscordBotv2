@@ -20,6 +20,15 @@ class Colors(commands.Cog):
     async def on_ready(self):
         db.execute('CREATE TABLE IF NOT EXISTS color_users (user_id text unique, role_id text)')
         connection.commit()
+
+        for user in await get_all_color_roles():
+            if not await helpers.role_helper.has_role(
+                self.client.guilds[0],
+                int(user[0]),
+                'booster'
+            ):
+                await delete_color_role(self.client.guilds[0], user[0])
+
         print('Colors Module Loaded.')
 
     # COMMANDS #
@@ -146,6 +155,12 @@ async def delete_color_role(guild, user_id):
     await guild.get_role(int(color_role_id)).delete()
     db.execute('DELETE FROM color_users WHERE user_id=?', (user_id,))
     connection.commit()
+
+async def get_all_color_roles():
+    db.execute('SELECT * FROM color_users')
+    results = db.fetchall()
+
+    return results
 
 def setup(client):
     client.add_cog(Colors(client))

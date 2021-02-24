@@ -9,15 +9,12 @@ from discord.ext import commands
 connection = sqlite3.connect("./db/config.db")
 db = connection.cursor()
 
-global bot_client
-
 description = 'Allows the creation of custom commands and responses in the server.'
 
 class CustomCommands(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-        bot_client = client
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -33,20 +30,20 @@ class CustomCommands(commands.Cog):
             if level == '-b':
                 if await helpers.role_helper.is_role_defined('booster'):
                     if await helpers.role_helper.has_role(message.guild, message.author.id, 'booster'):
-                        await send_response(message.channel, await get_response(message.content))
+                        await send_response(message.channel, await get_response(message.content), message.author)
             elif level == '-s':
                 if await helpers.role_helper.is_role_defined('sub'):
                     if await helpers.role_helper.has_role(message.guild, message.author.id, 'mod'):
-                        await send_response(message.channel, await get_response(message.content))
+                        await send_response(message.channel, await get_response(message.content), message.author)
             elif level == '-m':
                 if await helpers.role_helper.is_role_defined('mod'):
                     if await helpers.role_helper.has_role(message.guild, message.author.id, 'mod'):
-                        await send_response(message.channel, await get_response(message.content))
+                        await send_response(message.channel, await get_response(message.content), message.author)
             elif level == '-a':
-                await send_response(message.channel, await get_response(message.content))
+                await send_response(message.channel, await get_response(message.content), message.author)
             else:
                 if str(message.author.id) == level:
-                    await send_response(message.channel, await get_response(message.content))
+                    await send_response(message.channel, await get_response(message.content), message.author)
 
         # if message.content == 'one piece':
         #     await message.channel.send(
@@ -57,35 +54,34 @@ class CustomCommands(commands.Cog):
     @commands.check(helpers.role_helper.is_mod)
     async def custom_command(self, ctx, command_name, level, *, response):
         valid_levels = ['-a', '-b', '-s', '-m']
-        if await helpers.role_helper.has_role(ctx.guild, ctx.author.id, 'mod'):
-            if not await is_command(command_name):
-                if level in valid_levels:
-                    await add_command(command_name, response, level)
+        if not await is_command(command_name):
+            if level in valid_levels:
+                await add_command(command_name, response, level)
+                await ctx.send(
+                    embed=await helpers.embed_helper.create_success_embed(
+                        f'Command `{command_name}` created successfully.',
+                        self.client.guilds[0].get_member(self.client.user.id).color
+                    )
+                )
+            elif len(ctx.message.mentions) > 0:
+                if len(ctx.message.mentions) > 1:
+                    await helpers.embed_helper.create_error_embed('Please only include one user.')
+                else:
+                    member = ctx.message.mentions[0]
+                    await add_command(command_name, response, member.id)
                     await ctx.send(
                         embed=await helpers.embed_helper.create_success_embed(
                             f'Command `{command_name}` created successfully.',
                             self.client.guilds[0].get_member(self.client.user.id).color
                         )
                     )
-                elif len(ctx.message.mentions) > 0:
-                    if len(ctx.message.mentions) > 1:
-                        await helpers.embed_helper.create_error_embed('Please only include one user.')
-                    else:
-                        member = ctx.message.mentions[0]
-                        await add_command(command_name, response, member.id)
-                        await ctx.send(
-                            embed=await helpers.embed_helper.create_success_embed(
-                                f'Command `{command_name}` created successfully.',
-                                self.client.guilds[0].get_member(self.client.user.id).color
-                            )
-                        )
-                else:
-                    await ctx.send(
-                        embed=await helpers.embed_helper.create_error_embed(
-                            'Please use a valid permission flag. `-a` = Everyone, `-b` = Nitro Boosters, '
-                            '`-s` = Subscribers, `-m` = Mods, or you can `@ a user` to make a private command.'
-                        )
+            else:
+                await ctx.send(
+                    embed=await helpers.embed_helper.create_error_embed(
+                        'Please use a valid permission flag. `-a` = Everyone, `-b` = Nitro Boosters, '
+                        '`-s` = Subscribers, `-m` = Mods, or you can `@ a user` to make a private command.'
                     )
+                )
 
     @commands.command(name='delete')
     @commands.check(helpers.role_helper.is_mod)
@@ -113,11 +109,18 @@ class CustomCommands(commands.Cog):
         total_pages = math.ceil(len(command_list) / commands_per_page)
 
         if page > total_pages:
-            await ctx.send(
-                embed=await helpers.embed_helper.create_error_embed(
-                    f'That page does not exist, the last page is {total_pages}.'
+            if total_pages == 0:
+                await ctx.send(
+                    embed=await helpers.embed_helper.create_error_embed(
+                        f'There are no custom commands defined for this server.'
+                    )
                 )
-            )
+            else:
+                await ctx.send(
+                    embed=await helpers.embed_helper.create_error_embed(
+                        f'That page does not exist, the last page is {total_pages}.'
+                    )
+                )
         elif page < 1:
             await ctx.send(
                 embed=await helpers.embed_helper.create_error_embed(
@@ -146,10 +149,11 @@ class CustomCommands(commands.Cog):
                 embed=embed
             )
 
-
-async def send_response(channel, response):
-    await channel.send(response)
-
+async def send_response(channel, response, author):
+    message = response
+    if '{user}' in response:
+        message = response.replace('{user}', author.mention)
+    await channel.send(message)
 
 async def is_command(command):
     db.execute('SELECT * FROM custom_commands WHERE command=?', (command,))
@@ -160,13 +164,11 @@ async def is_command(command):
     else:
         return False
 
-
 async def get_response(command):
     db.execute('SELECT message FROM custom_commands WHERE command=?', (command,))
     row = db.fetchone()
 
     return row[0]
-
 
 async def get_level(command):
     db.execute('SELECT level FROM custom_commands WHERE command=?', (command,))
@@ -174,23 +176,19 @@ async def get_level(command):
 
     return row[0]
 
-
 async def add_command(command, response, level):
     db.execute('INSERT INTO custom_commands VALUES (?,?,?)', (command, response, level))
     connection.commit()
 
-
 async def remove_command(command):
     db.execute('DELETE FROM custom_commands WHERE command=?', (command,))
     connection.commit()
-
 
 async def get_commands():
     db.execute('SELECT * FROM custom_commands')
     data = db.fetchall()
 
     return data
-
 
 async def get_level_string(ctx, level):
     if level == '-a':
@@ -203,7 +201,6 @@ async def get_level_string(ctx, level):
         return 'Moderator'
     else:
         return ctx.guild.get_member(int(level)).mention
-
 
 def setup(client):
     client.add_cog(CustomCommands(client))

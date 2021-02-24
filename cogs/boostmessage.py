@@ -22,7 +22,7 @@ class BoostMessage(commands.Cog):
                 message.type == discord.MessageType.premium_guild_tier_1 or
                 message.type == discord.MessageType.premium_guild_tier_2 or
                 message.type == discord.MessageType.premium_guild_tier_3 or
-                message.content == 'test_boost'
+                (message.content == 'test_boost' and message.author.guild_permissions.administrator)
         ):
             if await helpers.channel_helper.is_channel_defined('general'):
                 global boost_message
@@ -33,9 +33,9 @@ class BoostMessage(commands.Cog):
                     boost_message
                 )
 
-    @commands.command()
+    @commands.command(name='boostmessage')
     @commands.has_permissions(administrator=True)
-    async def boostmessage(self, ctx, *, message):
+    async def boost_message(self, ctx, *, message):
         cfg_file = open('config.ini', 'w')
         cfg.set('Bot', 'boost_message', message)
         cfg.write(cfg_file)

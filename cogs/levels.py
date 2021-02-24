@@ -6,7 +6,6 @@ import helpers.embed_helper
 
 from discord.ext import commands
 from configparser import ConfigParser
-from bot import get_bot_color
 from cogs.customcommands import is_command
 
 # CONFIG INFO #
@@ -19,6 +18,8 @@ image = cfg.get('Bot', 'image_url')
 
 connection = sqlite3.connect('./db/config.db')
 db = connection.cursor()
+
+description = 'Allows users to gain experience and levels for being active in the server.'
 
 class Levels(commands.Cog):
 
@@ -55,7 +56,7 @@ class Levels(commands.Cog):
                             embed=await helpers.embed_helper.create_level_embed(
                                 message.author,
                                 await get_level(author_id),
-                                await get_bot_color()
+                                self.client.guilds[0].get_member(self.client.user.id).color
                             )
                         )
                 else:
@@ -67,7 +68,7 @@ class Levels(commands.Cog):
         embed = discord.Embed(
             title=f'Rank: #{await get_rank(user.id)}',
             description=f'Multiplier **{await get_multiplier(ctx)}**',
-            color=await get_bot_color()
+            color=self.client.guilds[0].get_member(self.client.user.id).color
         )
         embed.set_author(name=user.name, icon_url=user.avatar_url)
 
@@ -99,7 +100,7 @@ class Levels(commands.Cog):
 
         embed = discord.Embed(
             title=f'Top 5 levels in {ctx.guild.name}',
-            color=await get_bot_color()
+            color=self.client.guilds[0].get_member(self.client.user.id).color
         )
 
         top5 = await get_top_ranks()

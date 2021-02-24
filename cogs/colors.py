@@ -8,6 +8,8 @@ from discord.ext import commands
 connection = sqlite3.connect("./db/config.db")
 db = connection.cursor()
 
+description = 'Allows Server Boosters to change the color of their name in the server.'
+
 class Colors(commands.Cog):
 
     def __init__(self, client):

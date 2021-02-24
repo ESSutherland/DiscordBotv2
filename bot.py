@@ -6,10 +6,12 @@ import helpers.role_helper
 import helpers.channel_helper
 import cogs.colors
 import cogs.minecraft
+import math
 import asyncio
 
 from configparser import ConfigParser
 from discord.ext import commands
+from importlib import import_module
 
 # CONFIG INFO #
 cfg = ConfigParser()
@@ -22,6 +24,8 @@ bot_message = cfg.get('Bot', 'status_message')
 bot_author_id = 106882411781947392
 intents = discord.Intents.all()
 client = commands.Bot(command_prefix=bot_prefix, intents=intents)
+
+client.remove_command('help')
 
 # DB INFO #
 connection = sqlite3.connect("./db/config.db")
@@ -113,7 +117,6 @@ async def on_member_ban(guild, user):
         embed.set_footer(text=f'ID: {user.id}')
 
         await channel.send(embed=embed)
-
 
 # COMMANDS #
 
@@ -225,13 +228,13 @@ async def setchannel(ctx, channel_name, *, text):
 # LOAD COMMAND #
 @client.command()
 @commands.has_permissions(administrator=True)
-async def load(ctx, extension):
+async def enable(ctx, extension):
     client.load_extension(f'cogs.{extension}')
     await enable_cog(extension)
-    print(f'{ctx.author}({ctx.author.id}) executed Load command on extension {extension}.')
+    print(f'{ctx.author}({ctx.author.id}) executed Enable command on module {extension}.')
     await ctx.send(
         embed=await helpers.embed_helper.create_success_embed(
-            f'Extension `{extension}` has been loaded.',
+            f'Module `{extension}` has been enabled.',
             await get_bot_color()
         )
     )
@@ -239,13 +242,13 @@ async def load(ctx, extension):
 # UNLOAD COMMAND #
 @client.command()
 @commands.has_permissions(administrator=True)
-async def unload(ctx, extension):
+async def disable(ctx, extension):
     client.unload_extension(f'cogs.{extension}')
     await disable_cog(extension)
-    print(f'{ctx.author}({ctx.author.id}) executed Unload command on extension {extension}.')
+    print(f'{ctx.author}({ctx.author.id}) executed Disable command on module {extension}.')
     await ctx.send(
         embed=await helpers.embed_helper.create_success_embed(
-            f'Extension `{extension}` has been unloaded.',
+            f'Module `{extension}` has been disabled.',
             await get_bot_color()
         )
     )
@@ -256,13 +259,55 @@ async def unload(ctx, extension):
 async def reload(ctx, extension):
     client.unload_extension(f'cogs.{extension}')
     client.load_extension(f'cogs.{extension}')
-    print(f'{ctx.author}({ctx.author.id}) executed Reload command on extension {extension}.')
+    print(f'{ctx.author}({ctx.author.id}) executed Reload command on mopdule {extension}.')
     await ctx.send(
         embed=await helpers.embed_helper.create_success_embed(
-            f'Extension `{extension}` has been reloaded.',
+            f'Module `{extension}` has been reloaded.',
             await get_bot_color()
         )
     )
+
+@client.command()
+async def modules(ctx, page=1):
+    module_list = await get_cogs()
+
+    modules_per_page = 6
+
+    total_pages = math.ceil(len(module_list) / modules_per_page)
+
+    if page > total_pages:
+        await ctx.send(
+            embed=await helpers.embed_helper.create_error_embed(
+                f'That page does not exist, the last page is {total_pages}.'
+            )
+        )
+    elif page < 1:
+        await ctx.send(
+            embed=await helpers.embed_helper.create_error_embed(
+                'That page does not exist, the first page is 1.'
+            )
+        )
+    else:
+        embed = discord.Embed(
+            title='Modules',
+            color=await get_bot_color()
+        )
+        number = min((modules_per_page * page), len(module_list))
+
+        for i in range((modules_per_page * (page - 1)), number):
+            module_status = 'Enabled' if bool(int(module_list[i][1])) else 'Disabled'
+            if i == modules_per_page * (page - 1):
+                embed.add_field(name='Module', value=module_list[i][0], inline=True)
+                embed.add_field(name='Description', value=module_list[i][2], inline=True)
+                embed.add_field(name='Status', value=module_status, inline=True)
+            else:
+                embed.add_field(name='\u200b', value=module_list[i][0], inline=True)
+                embed.add_field(name='\u200b', value=module_list[i][2], inline=True)
+                embed.add_field(name='\u200b', value=module_status, inline=True)
+        embed.add_field(name='\u200b', value=f'Page [{page}/{total_pages}]', inline=True)
+        await ctx.send(
+            embed=embed
+        )
 
 @client.command()
 @commands.has_permissions(administrator=True)
@@ -279,7 +324,7 @@ async def status(ctx, *, message):
 
 @client.command()
 async def whois(ctx, mention_user=None):
-    if len(ctx.message.mentions) == 0:
+    if len(ctx.message.mentions) == 0 and mention_user is None:
         user = ctx.author
     else:
         user = ctx.message.mentions[0]
@@ -366,6 +411,29 @@ async def lookup(ctx, user_id):
     except:
         print('ERROR')
 
+@client.command()
+async def help(ctx):
+    url = f'https://essutherland.github.io/bot-site/?prefix={bot_prefix}&bot_name={client.user.name}'
+    if await is_cog_enabled('animalcrossing'):
+        url += '&animalcrossing=1'
+    if await is_cog_enabled('colors'):
+        url += '&color=1'
+    if await is_cog_enabled('customcommands'):
+        url += '&custom=1'
+    if await is_cog_enabled('levels'):
+        url += '&levels=1'
+    if await is_cog_enabled('minecraft'):
+        url += '&minecraft=1'
+
+    embed = discord.Embed(
+        colour=await get_bot_color(),
+        title='CLICK HERE FOR A LIST OF COMMANDS',
+        url=url
+    )
+    embed.set_author(name=client.user.name, url=client.user.avatar_url)
+
+    await ctx.send(embed=embed)
+
 async def is_cog_defined(cog):
     db.execute('SELECT * FROM cogs WHERE cog_name=?', (cog,))
     row = db.fetchone()
@@ -388,14 +456,24 @@ async def disable_cog(cog):
     db.execute('UPDATE cogs SET is_enabled=? WHERE cog_name=?', (int(False), cog))
     connection.commit()
 
+async def get_cogs():
+    db.execute('SELECT * FROM cogs')
+    results = db.fetchall()
+
+    return results
+
 async def load_cogs():
     # COG LOADING #
-    db.execute('CREATE TABLE IF NOT EXISTS cogs(cog_name text, is_enabled integer)')
+    db.execute('CREATE TABLE IF NOT EXISTS cogs(cog_name text, is_enabled integer, description text)')
     for filename in os.listdir('./cogs'):
         if filename.endswith('.py'):
             cog_name = filename[:-3]
+
+            mod = import_module(f'cogs.{cog_name}')
+            met = getattr(mod, 'description')
+            description = met
             if not await is_cog_defined(cog_name):
-                db.execute('INSERT INTO cogs VALUES (?,?)', (cog_name, int(True)))
+                db.execute('INSERT INTO cogs VALUES (?,?,?)', (cog_name, int(True), description))
                 client.load_extension(f'cogs.{cog_name}')
             elif await is_cog_enabled(cog_name):
                 client.load_extension(f'cogs.{cog_name}')

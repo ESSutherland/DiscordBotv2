@@ -5,10 +5,11 @@ import helpers.role_helper
 import math
 
 from discord.ext import commands
-from bot import get_bot_color
 
 connection = sqlite3.connect("./db/config.db")
 db = connection.cursor()
+
+description = 'Allows the creation of custom commands and responses in the server.'
 
 class CustomCommands(commands.Cog):
 
@@ -44,6 +45,11 @@ class CustomCommands(commands.Cog):
                 if str(message.author.id) == level:
                     await send_response(message.channel, await get_response(message.content))
 
+        # if message.content == 'one piece':
+        #     await message.channel.send(
+        #         file=discord.File(fp='./images/onepiece.jpg')
+        #     )
+
     @commands.command(name='command')
     async def custom_command(self, ctx, command_name, level, *, response):
         valid_levels = ['-a', '-b', '-s', '-m']
@@ -54,7 +60,7 @@ class CustomCommands(commands.Cog):
                     await ctx.send(
                         embed=await helpers.embed_helper.create_success_embed(
                             f'Command `{command_name}` created successfully.',
-                            await get_bot_color()
+                            self.client.guilds[0].get_member(self.client.user.id).color
                         )
                     )
                 elif len(ctx.message.mentions) > 0:
@@ -66,7 +72,7 @@ class CustomCommands(commands.Cog):
                         await ctx.send(
                             embed=await helpers.embed_helper.create_success_embed(
                                 f'Command `{command_name}` created successfully.',
-                                await get_bot_color()
+                                self.client.guilds[0].get_member(self.client.user.id).color
                             )
                         )
                 else:
@@ -84,7 +90,7 @@ class CustomCommands(commands.Cog):
             await ctx.send(
                 embed=await helpers.embed_helper.create_success_embed(
                     f'Command `{command_name}` deleted successfully.',
-                    await get_bot_color()
+                    self.client.guilds[0].get_member(self.client.user.id).color
                 )
             )
         else:
@@ -116,7 +122,7 @@ class CustomCommands(commands.Cog):
         else:
             embed = discord.Embed(
                 title='Custom Commands',
-                color=await get_bot_color()
+                color=self.client.guilds[0].get_member(self.client.user.id).color
             )
             number = min((commands_per_page * page), len(command_list))
 

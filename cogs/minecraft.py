@@ -5,10 +5,11 @@ import helpers.role_helper
 from discord.ext import commands
 from mojang_api import Player, get_status
 from mcrcon import MCRcon
-from bot import get_bot_color
 
 connection = sqlite3.connect('./db/config.db')
 db = connection.cursor()
+
+description = 'Allows twitch subscribers to whitelist themselves on the connected Minecraft server.'
 
 class Minecraft(commands.Cog):
 
@@ -43,7 +44,7 @@ class Minecraft(commands.Cog):
                             await ctx.send(
                                 embed=await helpers.embed_helper.create_success_embed(
                                     f'Set whitelist for {ctx.author.mention}: `{player.username}`',
-                                    await get_bot_color()
+                                    self.client.guilds[0].get_member(self.client.user.id).color
                                 )
                             )
                         except:
@@ -86,7 +87,7 @@ class Minecraft(commands.Cog):
         await ctx.send(
             embed=await helpers.embed_helper.create_success_embed(
                 'RCON Info Set.',
-                await get_bot_color()
+                self.client.guilds[0].get_member(self.client.user.id).color
             )
         )
 

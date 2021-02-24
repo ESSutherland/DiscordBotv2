@@ -3,7 +3,8 @@ import discord
 import helpers.embed_helper
 
 from discord.ext import commands
-from bot import get_bot_color
+
+description = 'Allows users to run a command to get information about a specified Animal Crossing New Horizons Villager.'
 
 class AnimalCrossing(commands.Cog):
 
@@ -19,10 +20,9 @@ class AnimalCrossing(commands.Cog):
         if await is_villager(villager_name):
             villager = await get_villager_data(villager_name)
             embed = discord.Embed(
-                color=await get_bot_color()
+                color=self.client.guilds[0].get_member(self.client.user.id).color
             )
             embed.set_author(name=villager[2], icon_url=f'http://acnhapi.com/v1/icons/villagers/{villager[0]}')
-            #embed.set_thumbnail(url=f'http://acnhapi.com/v1/icons/villagers/{villager[0]}')
             embed.set_image(url=f'http://acnhapi.com/v1/images/villagers/{villager[0]}')
             embed.add_field(
                 name='Personality :smiley:',

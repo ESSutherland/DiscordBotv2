@@ -1,4 +1,5 @@
 import sqlite3
+import discord
 
 connection = sqlite3.connect('./db/config.db')
 db = connection.cursor()
@@ -25,3 +26,33 @@ async def has_role(guild, user_id,  role_name):
         if r == role:
             return True
     return False
+
+async def is_mod(ctx):
+    if await is_role_defined('mod'):
+        if (await has_role(ctx.guild, ctx.author.id, 'mod') or
+                discord.Permissions.administrator in ctx.author.guild_permissions):
+            return True
+        else:
+            return False
+    else:
+        return False
+
+async def is_booster(ctx):
+    if await is_role_defined('booster'):
+        if (await has_role(ctx.guild, ctx.author.id, 'booster') or
+                discord.Permissions.administrator in ctx.author.guild_permissions):
+            return True
+        else:
+            return False
+    else:
+        return False
+
+async def is_sub(ctx):
+    if await is_role_defined('sub'):
+        if (await has_role(ctx.guild, ctx.author.id, 'sub') or
+                discord.Permissions.administrator in ctx.author.guild_permissions):
+            return True
+        else:
+            return False
+    else:
+        return False

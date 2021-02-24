@@ -66,7 +66,7 @@ class Levels(commands.Cog):
     async def level(self, ctx):
         user = ctx.author
         embed = discord.Embed(
-            title=f'Rank: #{await get_rank(user.id)}',
+            title=f'Rank: #{await get_rank(user.id) if await get_rank(user.id) > 0 else "N/A"}',
             description=f'Multiplier **{await get_multiplier(ctx)}**',
             color=self.client.guilds[0].get_member(self.client.user.id).color
         )
@@ -158,13 +158,19 @@ async def get_exp(user_id):
     db.execute('SELECT exp FROM levels WHERE user_id=?', (user_id,))
     row = db.fetchone()
 
-    return float(row[0])
+    if row is not None:
+        return int(row[0])
+    else:
+        return 0
 
 async def get_level(user_id):
     db.execute('SELECT level FROM levels WHERE user_id=?', (user_id,))
     row = db.fetchone()
 
-    return int(row[0])
+    if row is not None:
+        return int(row[0])
+    else:
+        return 0
 
 async def set_exp(user_id, exp):
     db.execute('UPDATE levels SET exp=? WHERE user_id=?', (exp, user_id))
@@ -179,10 +185,11 @@ async def get_rank(user_id):
     results = db.fetchall()
     rank = 0
 
-    for user in results:
-        rank += 1
-        if user[0] == str(user_id):
-            return rank
+    if await get_level(user_id) > 0:
+        for user in results:
+            rank += 1
+            if user[0] == str(user_id):
+                return rank
     return rank
 
 async def get_top_ranks():
@@ -193,15 +200,16 @@ async def get_top_ranks():
 
 async def get_multiplier(message):
     author_id = message.author.id
+    multiplier = 1
     if await helpers.role_helper.is_role_defined('sub'):
         if await helpers.role_helper.has_role(message.guild, author_id, 'sub'):
-            return 1.5
+            multiplier = 1.5
 
     if await helpers.role_helper.is_role_defined('booster'):
         if await helpers.role_helper.has_role(message.guild, author_id, 'booster'):
-            return 2
+            multiplier = 2
 
-    return 1
+    return multiplier
 
 def setup(client):
     client.add_cog(Levels(client))

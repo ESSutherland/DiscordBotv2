@@ -9,12 +9,15 @@ from discord.ext import commands
 connection = sqlite3.connect("./db/config.db")
 db = connection.cursor()
 
+global bot_client
+
 description = 'Allows the creation of custom commands and responses in the server.'
 
 class CustomCommands(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+        bot_client = client
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -51,6 +54,7 @@ class CustomCommands(commands.Cog):
         #     )
 
     @commands.command(name='command')
+    @commands.check(helpers.role_helper.is_mod)
     async def custom_command(self, ctx, command_name, level, *, response):
         valid_levels = ['-a', '-b', '-s', '-m']
         if await helpers.role_helper.has_role(ctx.guild, ctx.author.id, 'mod'):
@@ -84,6 +88,7 @@ class CustomCommands(commands.Cog):
                     )
 
     @commands.command(name='delete')
+    @commands.check(helpers.role_helper.is_mod)
     async def delete(self, ctx, command_name):
         if await is_command(command_name):
             await remove_command(command_name)
@@ -105,7 +110,7 @@ class CustomCommands(commands.Cog):
         command_list = await get_commands()
         commands_per_page = 6
 
-        total_pages = math.ceil(len(command_list)/commands_per_page)
+        total_pages = math.ceil(len(command_list) / commands_per_page)
 
         if page > total_pages:
             await ctx.send(
@@ -130,7 +135,8 @@ class CustomCommands(commands.Cog):
                 if i == commands_per_page * (page - 1):
                     embed.add_field(name='Command', value=command_list[i][0], inline=True)
                     embed.add_field(name='Response', value=command_list[i][1], inline=True)
-                    embed.add_field(name='Permission', value=await get_level_string(ctx, command_list[i][2]), inline=True)
+                    embed.add_field(name='Permission', value=await get_level_string(ctx, command_list[i][2]),
+                                    inline=True)
                 else:
                     embed.add_field(name='\u200b', value=command_list[i][0], inline=True)
                     embed.add_field(name='\u200b', value=command_list[i][1], inline=True)
@@ -140,8 +146,10 @@ class CustomCommands(commands.Cog):
                 embed=embed
             )
 
+
 async def send_response(channel, response):
     await channel.send(response)
+
 
 async def is_command(command):
     db.execute('SELECT * FROM custom_commands WHERE command=?', (command,))
@@ -152,11 +160,13 @@ async def is_command(command):
     else:
         return False
 
+
 async def get_response(command):
     db.execute('SELECT message FROM custom_commands WHERE command=?', (command,))
     row = db.fetchone()
 
     return row[0]
+
 
 async def get_level(command):
     db.execute('SELECT level FROM custom_commands WHERE command=?', (command,))
@@ -164,19 +174,23 @@ async def get_level(command):
 
     return row[0]
 
+
 async def add_command(command, response, level):
     db.execute('INSERT INTO custom_commands VALUES (?,?,?)', (command, response, level))
     connection.commit()
 
+
 async def remove_command(command):
     db.execute('DELETE FROM custom_commands WHERE command=?', (command,))
     connection.commit()
+
 
 async def get_commands():
     db.execute('SELECT * FROM custom_commands')
     data = db.fetchall()
 
     return data
+
 
 async def get_level_string(ctx, level):
     if level == '-a':
@@ -189,6 +203,7 @@ async def get_level_string(ctx, level):
         return 'Moderator'
     else:
         return ctx.guild.get_member(int(level)).mention
+
 
 def setup(client):
     client.add_cog(CustomCommands(client))

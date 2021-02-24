@@ -24,6 +24,7 @@ class Colors(commands.Cog):
 
     # COMMANDS #
     @commands.command(name='color', aliases=['colour'])
+    @commands.check(helpers.role_helper.is_booster)
     async def color_command(self, ctx, input_hex):
         print(f'{ctx.author}({ctx.author.id}) executed Color Command.')
 
@@ -41,47 +42,39 @@ class Colors(commands.Cog):
             role_color = discord.Color.from_rgb(rgb[0], rgb[1], rgb[2])
             author_id = ctx.author.id
 
-            if await helpers.role_helper.has_role(ctx.guild, author_id, 'booster'):
-
-                # DISABLE DEFAULT COLOR #
-                if role_color == discord.Color.default():
-                    await ctx.send(
-                        embed=await helpers.embed_helper.create_error_embed(
-                            'You cannot use this color, please select another.'
-                        )
-                    )
-
-                # CHECK FOR EXISTING ROLE #
-                elif await has_color_role(author_id):
-                    role_id = await get_color_role(author_id)
-                    role = ctx.guild.get_role(int(role_id))
-                    await role.edit(color=role_color)
-                    await ctx.send(
-                        embed=await helpers.embed_helper.create_color_success_embed(
-                            color_hex, role_color, ctx.author
-                        )
-                    )
-
-                # CREATE NEW ROLE #
-                else:
-                    role = await ctx.guild.create_role(
-                        name=ctx.author.name, color=role_color
-                    )
-                    await ctx.guild.get_member(author_id).add_roles(role)
-                    if await helpers.role_helper.has_role(ctx.guild, author_id, 'mod'):
-                        await ctx.guild.edit_role_positions(positions={role: (mod_role_index + 1)})
-                    else:
-                        await ctx.guild.edit_role_positions(positions={role: mod_role_index})
-                    await add_color_role(author_id, role.id)
-                    await ctx.send(
-                        embed=await helpers.embed_helper.create_color_success_embed(
-                            color_hex, role_color, ctx.author
-                        )
-                    )
-            else:
-                ctx.send(
+            # DISABLE DEFAULT COLOR #
+            if role_color == discord.Color.default():
+                await ctx.send(
                     embed=await helpers.embed_helper.create_error_embed(
-                        'You must be a server booster to use this command.'
+                        'You cannot use this color, please select another.'
+                    )
+                )
+
+            # CHECK FOR EXISTING ROLE #
+            elif await has_color_role(author_id):
+                role_id = await get_color_role(author_id)
+                role = ctx.guild.get_role(int(role_id))
+                await role.edit(color=role_color)
+                await ctx.send(
+                    embed=await helpers.embed_helper.create_color_success_embed(
+                        color_hex, role_color, ctx.author
+                    )
+                )
+
+            # CREATE NEW ROLE #
+            else:
+                role = await ctx.guild.create_role(
+                    name=ctx.author.name, color=role_color
+                )
+                await ctx.guild.get_member(author_id).add_roles(role)
+                if await helpers.role_helper.has_role(ctx.guild, author_id, 'mod'):
+                    await ctx.guild.edit_role_positions(positions={role: (mod_role_index + 1)})
+                else:
+                    await ctx.guild.edit_role_positions(positions={role: mod_role_index})
+                await add_color_role(author_id, role.id)
+                await ctx.send(
+                    embed=await helpers.embed_helper.create_color_success_embed(
+                        color_hex, role_color, ctx.author
                     )
                 )
         elif (
@@ -119,11 +112,12 @@ class Colors(commands.Cog):
                     'Please include Hex value `!color <HEX>`.'
                 )
             )
-        else:
-            await ctx.send(
-                embed=await helpers.embed_helper.create_error_embed(
-                    'Please use a valid Hex value `#FFFFFF or FFFFFF`.'
-                )
+        elif isinstance(error, commands.CommandInvokeError):
+            if isinstance(error.__cause__, ValueError):
+                await ctx.send(
+                    embed=await helpers.embed_helper.create_error_embed(
+                        'Please use a valid Hex value `#FFFFFF or FFFFFF`.'
+                    )
             )
 
 # FUNCTIONS #

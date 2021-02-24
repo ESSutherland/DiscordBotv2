@@ -34,6 +34,7 @@ class BoostMessage(commands.Cog):
                 )
 
     @commands.command()
+    @commands.has_permissions(administrator=True)
     async def boostmessage(self, ctx, *, message):
         cfg_file = open('config.ini', 'w')
         cfg.set('Bot', 'boost_message', message)

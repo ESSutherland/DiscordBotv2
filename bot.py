@@ -90,6 +90,11 @@ async def on_member_update(before, after):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         return
+    if isinstance(error, commands.CheckFailure):
+        await ctx.send(
+            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
+        )
+        return
     raise error
 
 @client.event

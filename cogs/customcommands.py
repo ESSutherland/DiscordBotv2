@@ -25,6 +25,9 @@ class CustomCommands(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         if await is_command(message.content):
+
+            print(f'{message.author}({message.author.id}) executed custom command: {message.content}.')
+
             level = await get_level(message.content)
 
             if level == '-b':

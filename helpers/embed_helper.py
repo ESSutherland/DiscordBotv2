@@ -18,7 +18,7 @@ async def create_success_embed(message, color):
 
 async def create_color_success_embed(color_hex, color, user):
     color_hex = color_hex.upper()
-    thumb_url = 'https://htmlcolors.com/color-image/' + color_hex + '.png'
+
     embed = discord.Embed(
         color=color
     )
@@ -29,7 +29,7 @@ async def create_color_success_embed(color_hex, color, user):
         inline=True
     )
 
-    embed.set_thumbnail(url=thumb_url)
+    embed.set_thumbnail(url='attachment://last_color.png')
     return embed
 
 async def create_level_embed(user, level, color):

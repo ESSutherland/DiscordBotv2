@@ -24,12 +24,13 @@ class Minecraft(commands.Cog):
         connection.commit()
 
         for user in await get_all_whitelists():
-            if not await helpers.role_helper.has_role(
-                self.client.guilds[0],
-                int(user[0]),
-                'sub'
-            ):
-                await whitelist_remove_user(user[0])
+            if await helpers.role_helper.is_role_defined('sub'):
+                if not await helpers.role_helper.has_role(
+                    self.client.guilds[0],
+                    int(user[0]),
+                    'sub'
+                ):
+                    await whitelist_remove_user(user[0])
 
         print('Minecraft Module Loaded.')
 

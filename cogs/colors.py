@@ -2,8 +2,10 @@ import discord
 import sqlite3
 import helpers.role_helper
 import helpers.embed_helper
+import datetime
 
 from discord.ext import commands
+from PIL import Image, ImageDraw, ImageFont
 
 connection = sqlite3.connect("./db/config.db")
 db = connection.cursor()
@@ -22,12 +24,13 @@ class Colors(commands.Cog):
         connection.commit()
 
         for user in await get_all_color_roles():
-            if not await helpers.role_helper.has_role(
-                self.client.guilds[0],
-                int(user[0]),
-                'booster'
-            ):
-                await delete_color_role(self.client.guilds[0], user[0])
+            if await helpers.role_helper.is_role_defined('booster'):
+                if not await helpers.role_helper.has_role(
+                    self.client.guilds[0],
+                    int(user[0]),
+                    'booster'
+                ):
+                    await delete_color_role(self.client.guilds[0], user[0])
 
         print('Colors Module Loaded.')
 
@@ -45,10 +48,15 @@ class Colors(commands.Cog):
             # ROLE VARIABLES #
             mod_role_id = await helpers.role_helper.get_role_id('mod')
             mod_role = ctx.guild.get_role(int(mod_role_id))
-            mod_role_index = ctx.guild.roles.index(mod_role)
             color_hex = input_hex.lstrip('#')
             rgb = await hex_to_rgb(color_hex)
             role_color = discord.Color.from_rgb(rgb[0], rgb[1], rgb[2])
+
+            img = Image.new('RGB', (64, 64), color=rgb)
+            img.save('./images/last_color.png')
+
+            color_img = discord.File('./images/last_color.png')
+
             author_id = ctx.author.id
 
             # DISABLE DEFAULT COLOR #
@@ -65,6 +73,7 @@ class Colors(commands.Cog):
                 role = ctx.guild.get_role(int(role_id))
                 await role.edit(color=role_color)
                 await ctx.send(
+                    file=color_img,
                     embed=await helpers.embed_helper.create_color_success_embed(
                         color_hex, role_color, ctx.author
                     )
@@ -76,12 +85,14 @@ class Colors(commands.Cog):
                     name=ctx.author.name, color=role_color
                 )
                 await ctx.guild.get_member(author_id).add_roles(role)
+                mod_role_index = ctx.guild.roles.index(mod_role)
                 if await helpers.role_helper.has_role(ctx.guild, author_id, 'mod'):
-                    await ctx.guild.edit_role_positions(positions={role: (mod_role_index + 1)})
+                    await ctx.guild.edit_role_positions(positions={role: mod_role_index + 1})
                 else:
                     await ctx.guild.edit_role_positions(positions={role: mod_role_index})
                 await add_color_role(author_id, role.id)
                 await ctx.send(
+                    file=color_img,
                     embed=await helpers.embed_helper.create_color_success_embed(
                         color_hex, role_color, ctx.author
                     )

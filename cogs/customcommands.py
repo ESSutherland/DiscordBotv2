@@ -149,6 +149,34 @@ class CustomCommands(commands.Cog):
                 embed=embed
             )
 
+    @custom_command.error
+    async def custom_command_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(
+                embed=await helpers.embed_helper.create_error_embed(
+                    f'Please include all parameters. `{self.client.command_prefix}command '
+                    f'<command name> <permission flag> <response>`'
+                )
+            )
+
+    @custom_commands.error
+    async def custom_commands_error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send(
+                embed=await helpers.embed_helper.create_error_embed(
+                    f'Please only use a whole numbers to specify a page.'
+                )
+            )
+
+    @delete.error
+    async def delete_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(
+                embed=await helpers.embed_helper.create_error_embed(
+                    f'Please include all parameters. `{self.client.command_prefix}delete <command name>`'
+                )
+            )
+
 async def send_response(channel, response, author):
     message = response
     if '{user}' in response:

@@ -15,6 +15,7 @@ class AnimeModule(commands.Cog):
 
     @commands.command(name='anime')
     async def anime(self, ctx, *, params):
+        print(f'{ctx.author}({ctx.author.id}) executed Anime command.')
         await ctx.send(embed=discord.Embed(
             title='Fetching Data...Please Wait.',
             color=self.client.guilds[0].get_member(self.client.user.id).color
@@ -64,6 +65,7 @@ class AnimeModule(commands.Cog):
 
     @commands.command(name='manga')
     async def manga(self, ctx, *, params):
+        print(f'{ctx.author}({ctx.author.id}) executed Manga command.')
         await ctx.send(embed=discord.Embed(
             title='Fetching Data...Please Wait.',
             color=self.client.guilds[0].get_member(self.client.user.id).color
@@ -110,7 +112,6 @@ class AnimeModule(commands.Cog):
         embed.set_footer(text=f'Published: {manga_data_2.published}')
 
         await ctx.send(embed=embed)
-
 
 def setup(client):
     client.add_cog(AnimeModule(client))

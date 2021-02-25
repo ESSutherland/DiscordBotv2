@@ -36,6 +36,7 @@ class BoostMessage(commands.Cog):
     @commands.command(name='boostmessage')
     @commands.has_permissions(administrator=True)
     async def boost_message(self, ctx, *, message):
+        print(f'{ctx.author}({ctx.author.id}) executed BoostMessage command.')
         cfg_file = open('config.ini', 'w')
         cfg.set('Bot', 'boost_message', message)
         cfg.write(cfg_file)

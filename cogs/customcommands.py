@@ -53,6 +53,9 @@ class CustomCommands(commands.Cog):
     @commands.command(name='command')
     @commands.check(helpers.role_helper.is_mod)
     async def custom_command(self, ctx, command_name, level, *, response):
+
+        print(f'{ctx.author}({ctx.author.id}) executed Command command.')
+
         valid_levels = ['-a', '-b', '-s', '-m']
         if not await is_command(command_name):
             if level in valid_levels:
@@ -86,6 +89,9 @@ class CustomCommands(commands.Cog):
     @commands.command(name='delete')
     @commands.check(helpers.role_helper.is_mod)
     async def delete(self, ctx, command_name):
+
+        print(f'{ctx.author}({ctx.author.id}) executed Delete command.')
+
         if await is_command(command_name):
             await remove_command(command_name)
             await ctx.send(
@@ -103,6 +109,9 @@ class CustomCommands(commands.Cog):
 
     @commands.command(name='commands')
     async def custom_commands(self, ctx, page=1):
+
+        print(f'{ctx.author}({ctx.author.id}) executed Commands command.')
+
         command_list = await get_commands()
         commands_per_page = 6
 

@@ -17,6 +17,7 @@ class AnimalCrossing(commands.Cog):
 
     @commands.command(name='villager')
     async def villager(self, ctx, villager_name):
+        print(f'{ctx.author}({ctx.author.id}) executed Villager command.')
         if await is_villager(villager_name):
             villager = await get_villager_data(villager_name)
             embed = discord.Embed(

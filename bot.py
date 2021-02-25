@@ -168,6 +168,9 @@ async def bot(ctx):
 @client.command()
 @commands.has_permissions(administrator=True)
 async def setrole(ctx, role_name, *, text):
+
+    print(f'{ctx.author}({ctx.author.id}) executed SetRole command.')
+
     valid_roles = ['sub', 'booster', 'mod', 'user', 'movie', 'game']
     mentioned_roles = ctx.message.role_mentions
     role_name = role_name.lower()
@@ -208,6 +211,9 @@ async def setrole(ctx, role_name, *, text):
 @client.command()
 @commands.has_permissions(administrator=True)
 async def setchannel(ctx, channel_name, *, text):
+
+    print(f'{ctx.author}({ctx.author.id}) executed SetChannel command.')
+
     valid_roles = ['bot', 'booster', 'mod', 'admin', 'general']
     mentioned_channels = ctx.message.channel_mentions
     channel_name = channel_name.lower()
@@ -278,7 +284,7 @@ async def disable(ctx, extension):
 async def reload(ctx, extension):
     client.unload_extension(f'cogs.{extension}')
     client.load_extension(f'cogs.{extension}')
-    print(f'{ctx.author}({ctx.author.id}) executed Reload command on mopdule {extension}.')
+    print(f'{ctx.author}({ctx.author.id}) executed Reload command on module {extension}.')
     await ctx.send(
         embed=await helpers.embed_helper.create_success_embed(
             f'Module `{extension}` has been reloaded.',
@@ -288,6 +294,9 @@ async def reload(ctx, extension):
 
 @client.command()
 async def modules(ctx, page=1):
+
+    print(f'{ctx.author}({ctx.author.id}) executed Modules command.')
+
     module_list = await get_cogs()
 
     modules_per_page = 6
@@ -331,6 +340,7 @@ async def modules(ctx, page=1):
 @client.command()
 @commands.has_permissions(administrator=True)
 async def status(ctx, *, message):
+    print(f'{ctx.author}({ctx.author.id}) executed Status command.')
     global bot_message
     bot_message = message
     cfg_file = open('config.ini', 'w')
@@ -343,6 +353,7 @@ async def status(ctx, *, message):
 
 @client.command()
 async def whois(ctx, mention_user=None):
+    print(f'{ctx.author}({ctx.author.id}) executed WhoIs command.')
     if len(ctx.message.mentions) == 0 and mention_user is None:
         user = ctx.author
     else:
@@ -409,6 +420,7 @@ async def whois(ctx, mention_user=None):
 @client.command()
 @commands.check(helpers.role_helper.is_mod)
 async def lookup(ctx, user_id):
+    print(f'{ctx.author}({ctx.author.id}) executed Lookup command.')
     try:
         user = await client.fetch_user(user_id)
         embed = discord.Embed(
@@ -433,6 +445,7 @@ async def lookup(ctx, user_id):
 
 @client.command()
 async def help(ctx):
+    print(f'{ctx.author}({ctx.author.id}) executed Help command.')
     url = f'https://essutherland.github.io/bot-site/?prefix={bot_prefix}&bot_name={client.user.name}'
     if await is_cog_enabled('animalcrossing'):
         url += '&animalcrossing=1'

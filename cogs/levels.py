@@ -64,6 +64,9 @@ class Levels(commands.Cog):
 
     @commands.command(name='level')
     async def level(self, ctx):
+
+        print(f'{ctx.author}({ctx.author.id}) executed Level command.')
+
         user = ctx.author
         embed = discord.Embed(
             title=f'Rank: #{await get_rank(user.id) if await get_rank(user.id) > 0 else "N/A"}',
@@ -93,6 +96,9 @@ class Levels(commands.Cog):
 
     @commands.command(name='leveltop')
     async def level_top(self, ctx):
+
+        print(f'{ctx.author}({ctx.author.id}) executed LevelTop command.')
+
         first = ':first_place:'
         second = ':second_place:'
         third = ':third_place:'
@@ -140,6 +146,9 @@ class Levels(commands.Cog):
     @commands.command(name='setexp')
     @commands.has_permissions(administrator=True)
     async def set_exp(self, ctx, exp):
+
+        print(f'{ctx.author}({ctx.author.id}) executed SetExp command.')
+
         if int(exp) > 0:
             cfg_file = open('config.ini', 'w')
             cfg.set('Bot', 'level_exp', exp)

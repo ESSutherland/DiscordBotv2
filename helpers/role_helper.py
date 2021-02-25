@@ -22,6 +22,9 @@ async def has_role(guild, user_id,  role_name):
     role = guild.get_role(int(role_id))
     member = guild.get_member(user_id)
 
+    if member is None:
+        return False
+
     for r in member.roles:
         if r == role:
             return True

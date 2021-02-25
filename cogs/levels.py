@@ -13,7 +13,7 @@ cfg = ConfigParser()
 cfg.read('config.ini')
 
 bot_prefix = cfg.get('Bot', 'command_prefix')
-level_exp = float(cfg.get('Bot', 'level_exp'))
+level_exp = int(cfg.get('Bot', 'level_exp'))
 image = cfg.get('Bot', 'image_url')
 
 connection = sqlite3.connect('./db/config.db')
@@ -82,7 +82,7 @@ class Levels(commands.Cog):
 
         embed.add_field(
             name=f'Exp to level {await get_level(user.id) + 1}',
-            value=f'{await get_exp(user.id)}/{level_exp}',
+            value=f'{float(await get_exp(user.id))}/{level_exp}',
             inline=True
         )
 
@@ -160,7 +160,7 @@ async def get_exp(user_id):
     row = db.fetchone()
 
     if row is not None:
-        return int(row[0])
+        return float(row[0])
     else:
         return 0
 

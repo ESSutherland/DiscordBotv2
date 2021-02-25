@@ -450,7 +450,7 @@ async def help(ctx):
         title='CLICK HERE FOR A LIST OF COMMANDS',
         url=url
     )
-    embed.set_author(name=client.user.name, url=client.user.avatar_url)
+    embed.set_author(name=client.user.name, icon_url=client.user.avatar_url)
 
     await ctx.send(embed=embed)
 

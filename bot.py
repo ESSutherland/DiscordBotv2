@@ -43,8 +43,6 @@ async def on_ready():
         activity=discord.Game(name=f'{bot_message} | {bot_prefix}help')
     )
 
-
-
     print(f'Bot ({client.user}) is now online')
 
 # JOIN EVENT #
@@ -61,6 +59,13 @@ async def on_member_remove(member):
 
     if await cogs.minecraft.has_whitelist(member.id):
         await cogs.minecraft.whitelist_remove_user(member.id)
+
+    if await helpers.channel_helper.is_channel_defined('admin'):
+        await client.guilds[0].get_channel(
+            await helpers.channel_helper.get_channel_id('admin')
+        ).send(
+            f'{member} has left the server.'
+        )
 
     print(f'{member}({member.id}) has left the server.')
 
@@ -104,7 +109,7 @@ async def on_command_error(ctx, error):
             embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
         return
-    raise error
+    print(error)
 
 @client.event
 async def on_member_ban(guild, user):
@@ -214,7 +219,7 @@ async def setchannel(ctx, channel_name, *, text):
                 channel_is_valid = True
                 pass
         if channel_is_valid:
-            if await helpers.role_helper.is_role_defined(channel_name):
+            if await helpers.channel_helper.is_channel_defined(channel_name):
                 db.execute('UPDATE channels SET channel_id=? WHERE channel_name=?', (channel.id, channel_name))
             else:
                 db.execute('INSERT INTO channels VALUES (?,?)', (channel_name, channel.id))
@@ -402,6 +407,7 @@ async def whois(ctx, mention_user=None):
     )
 
 @client.command()
+@commands.check(helpers.role_helper.is_mod)
 async def lookup(ctx, user_id):
     try:
         user = await client.fetch_user(user_id)

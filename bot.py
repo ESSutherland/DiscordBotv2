@@ -43,6 +43,16 @@ async def on_ready():
         activity=discord.Game(name=f'{bot_message} | {bot_prefix}help')
     )
 
+    for member in client.guilds[0].members:
+        if not member.pending and not member.bot:
+            if await helpers.role_helper.is_role_defined('user'):
+                if not await helpers.role_helper.has_role(client.guilds[0], member.id, 'user'):
+                    await client.guilds[0].get_member(member.id).add_roles(
+                        client.guilds[0].get_role(
+                            await helpers.role_helper.get_role_id('user')
+                        )
+                    )
+
     print(f'Bot ({client.user}) is now online')
 
 # JOIN EVENT #

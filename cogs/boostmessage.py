@@ -17,6 +17,10 @@ class BoostMessage(commands.Cog):
         self.client = client
 
     @commands.Cog.listener()
+    async def on_ready(self):
+        print('Boost Message Module Loaded.')
+
+    @commands.Cog.listener()
     async def on_message(self, message):
         if (message.type == discord.MessageType.premium_guild_subscription or
                 message.type == discord.MessageType.premium_guild_tier_1 or

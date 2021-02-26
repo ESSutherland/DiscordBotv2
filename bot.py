@@ -58,7 +58,7 @@ async def on_ready():
 # JOIN EVENT #
 @client.event
 async def on_member_join(member):
-    print(f'{member}({member.id}) has joined the server.')
+    print(f'{member}({member.id}) has joined the server. Awaiting Screening')
 
 # LEAVE EVENT #
 @client.event
@@ -104,6 +104,7 @@ async def on_member_update(before, after):
 
     if await helpers.role_helper.is_role_defined('user'):
         if after.pending is False and not await helpers.role_helper.has_role(client.guilds[0], before.id, 'user'):
+            print(f'{after}({after.id}) has agreed to the rules.')
             await client.guilds[0].get_member(after.id).add_roles(
                 client.guilds[0].get_role(
                     await helpers.role_helper.get_role_id('user')

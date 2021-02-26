@@ -465,7 +465,7 @@ async def help(ctx):
     )
     embed.set_author(name=client.user.name, icon_url=client.user.avatar_url)
 
-    await ctx.send(embed="THIS COMMAND IS UNDER CONSTRUCTION")
+    await ctx.send("THIS COMMAND IS UNDER CONSTRUCTION")
 
 async def is_cog_defined(cog):
     db.execute('SELECT * FROM cogs WHERE cog_name=?', (cog,))

@@ -25,7 +25,7 @@ async def create_color_success_embed(color_hex, color, user):
 
     embed.add_field(
         name='Success!',
-        value=f'Color set to `#{color_hex}` for {user.mention}',
+        value=f'Color set to `{color_hex}` for {user.mention}',
         inline=True
     )
 

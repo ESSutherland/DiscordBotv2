@@ -5,7 +5,7 @@ import helpers.embed_helper
 import datetime
 
 from discord.ext import commands
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageColor
 
 connection = sqlite3.connect("./db/config.db")
 db = connection.cursor()
@@ -48,8 +48,8 @@ class Colors(commands.Cog):
             # ROLE VARIABLES #
             mod_role_id = await helpers.role_helper.get_role_id('mod')
             mod_role = ctx.guild.get_role(int(mod_role_id))
-            color_hex = input_hex.lstrip('#')
-            rgb = await hex_to_rgb(color_hex)
+            color_hex = input_hex if input_hex.startswith('#') else f'#{input_hex}'
+            rgb = ImageColor.getrgb(color_hex)
             role_color = discord.Color.from_rgb(rgb[0], rgb[1], rgb[2])
 
             img = Image.new('RGB', (64, 64), color=rgb)

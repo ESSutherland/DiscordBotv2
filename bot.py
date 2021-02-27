@@ -120,7 +120,7 @@ async def on_command_error(ctx, error):
             embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
         return
-    print(error)
+    raise error
 
 @client.event
 async def on_member_ban(guild, user):

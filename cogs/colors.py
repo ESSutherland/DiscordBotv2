@@ -2,7 +2,7 @@ import discord
 import sqlite3
 import helpers.role_helper
 import helpers.embed_helper
-import datetime
+import asyncio
 
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageColor
@@ -37,7 +37,7 @@ class Colors(commands.Cog):
     # COMMANDS #
     @commands.command(name='color', aliases=['colour'])
     @commands.check(helpers.role_helper.is_booster)
-    async def color_command(self, ctx, input_hex):
+    async def color_command(self, ctx, input_hex, id=None):
         print(f'{ctx.author}({ctx.author.id}) executed Color Command.')
 
         if (
@@ -47,7 +47,6 @@ class Colors(commands.Cog):
 
             # ROLE VARIABLES #
             mod_role_id = await helpers.role_helper.get_role_id('mod')
-            mod_role = ctx.guild.get_role(int(mod_role_id))
             color_hex = input_hex if input_hex.startswith('#') else f'#{input_hex}'
             rgb = ImageColor.getrgb(color_hex)
             role_color = discord.Color.from_rgb(rgb[0], rgb[1], rgb[2])
@@ -57,7 +56,12 @@ class Colors(commands.Cog):
 
             color_img = discord.File('./images/last_color.png')
 
-            author_id = ctx.author.id
+            if id is None:
+                author = ctx.author
+                author_id = ctx.author.id
+            else:
+                author_id = int(id)
+                author = ctx.guild.get_member(author_id)
 
             # DISABLE DEFAULT COLOR #
             if role_color == discord.Color.default():
@@ -82,19 +86,29 @@ class Colors(commands.Cog):
             # CREATE NEW ROLE #
             else:
                 role = await ctx.guild.create_role(
-                    name=ctx.author.name, color=role_color
+                    name=author.name, color=role_color
                 )
+
+                await asyncio.sleep(1)
+
+                mod_role = ctx.guild.get_role(int(mod_role_id))
                 await ctx.guild.get_member(author_id).add_roles(role)
-                mod_role_index = ctx.guild.roles.index(mod_role)
-                if await helpers.role_helper.has_role(ctx.guild, author_id, 'mod'):
-                    await ctx.guild.edit_role_positions(positions={role: mod_role_index + 1})
+
+                if mod_role in author.roles:
+                    await ctx.guild.edit_role_positions(positions={role: mod_role.position})
+                    print('HAS MOD')
                 else:
-                    await ctx.guild.edit_role_positions(positions={role: mod_role_index})
+                    await ctx.guild.edit_role_positions(positions={role: mod_role.position - 1})
+                    print('NO MOD')
+
+                print(ctx.guild.roles)
+
                 await add_color_role(author_id, role.id)
+
                 await ctx.send(
                     file=color_img,
                     embed=await helpers.embed_helper.create_color_success_embed(
-                        color_hex, role_color, ctx.author
+                        color_hex, role_color, author
                     )
                 )
         elif (

@@ -17,6 +17,10 @@ async def get_role_id(role):
     row = db.fetchone()
     return row[0]
 
+async def get_role_index(guild, role):
+
+    return guild.roles.index(role)
+
 async def has_role(guild, user_id,  role_name):
     role_id = await get_role_id(role_name)
     role = guild.get_role(int(role_id))

@@ -82,14 +82,20 @@ async def on_member_remove(member):
 # UPDATE EVENT #
 @client.event
 async def on_member_update(before, after):
+
+    before_roles = before.roles
+    before_roles.reverse()
+    after_roles = after.roles
+    after_roles.reverse()
+
     # GAIN ROLE #
-    if len(before.roles) < len(after.roles):
-        new_role = next(role for role in after.roles if role not in before.roles)
+    if len(before_roles) < len(after_roles):
+        new_role = next(role for role in after_roles if role not in before_roles)
         print(f'{before}({before.id}) has gained role: {new_role}({new_role.id})')
 
     # LOSE ROLE #
     if len(before.roles) > len(after.roles):
-        lost_role = next(role for role in before.roles if role not in after.roles)
+        lost_role = next(role for role in before_roles if role not in after_roles)
         print(f'{before}({before.id}) has lost role: {lost_role}({lost_role.id})')
 
         if await helpers.role_helper.is_role_defined('booster'):

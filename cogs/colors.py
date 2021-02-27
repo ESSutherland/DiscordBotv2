@@ -52,9 +52,9 @@ class Colors(commands.Cog):
             role_color = discord.Color.from_rgb(rgb[0], rgb[1], rgb[2])
 
             img = Image.new('RGB', (64, 64), color=rgb)
-            img.save('./images/last_color.png')
+            img.save('./images/colors/last_color.png')
 
-            color_img = discord.File('./images/last_color.png')
+            color_img = discord.File('./images/colors/last_color.png')
 
             if id is None:
                 author = ctx.author

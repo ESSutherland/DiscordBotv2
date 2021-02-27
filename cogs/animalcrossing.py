@@ -222,8 +222,6 @@ def get_sign(month, day):
     month = month.lower()
     day = int(day[:-2])
 
-    print(day)
-
     if month == 'december':
         astro_sign = 'Sagittarius' if (day < 22) else 'capricorn'
     elif month == 'january':

@@ -1,0 +1,1 @@
+Database will be created upon running the bot.

@@ -85,14 +85,14 @@ class AnimalCrossing(commands.Cog):
             icon_w, icon_h = icon.size
 
             template.paste(color_image, (50, 25), color_image)
-            template.paste(catch_image, (int(77+(256/2)-(catch_w/2)), 100), catch_image)
+            template.paste(catch_image, (int(77+(256/2)-(catch_w/2)), 90), catch_image)
             template.paste(birth_image, (int(77+(256/2)-(birth_w/2)), 410), birth_image)
             template.paste(personality_image, (400, 150), personality_image)
             template.paste(species_image, (400, 210), species_image)
             template.paste(gender_image, (400, 270), gender_image)
             template.paste(hobby_image, (400, 330), hobby_image)
             template.paste(image, (77, 140), image)
-            template.paste(icon, (int(77+(256/2)-(catch_w/2)-icon_w), int(100-(icon_h/4))), icon)
+            template.paste(icon, (int(77+(256/2)-(catch_w/2)-icon_w), int(90-(icon_h/4))), icon)
 
             template.save('./images/last_villager.png')
 

@@ -99,7 +99,7 @@ class AnimalCrossing(commands.Cog):
             template.paste(color_image, (50, 20), color_image)
             template.paste(catch_image, (400 + icon_w, 90), catch_image)
             template.paste(birth_image, (int(77+(256/2)-(birth_w/2)), 400), birth_image)
-            template.paste(sign, (int(int(77+(256/2)+(birth_w/2)+10)), 400), sign)
+            template.paste(sign, (int(int(77+(256/2)+(birth_w/2)+10)), 395), sign)
             template.paste(bday, (int(int(77 + (256 / 2) - (birth_w / 2) - (cake_w + 10))), 400), bday)
             template.paste(personality_image, (400, 160), personality_image)
             template.paste(species_image, (400, 225), species_image)

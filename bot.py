@@ -474,6 +474,10 @@ async def help(ctx):
         url += '&levels=1'
     if await is_cog_enabled('minecraft'):
         url += '&minecraft=1'
+    if await is_cog_enabled('boostmessage'):
+        url += '&boostmessage=1'
+    if await is_cog_enabled('anime'):
+        url += '&anime=1'
 
     embed = discord.Embed(
         colour=await get_bot_color(),
@@ -482,7 +486,7 @@ async def help(ctx):
     )
     embed.set_author(name=client.user.name, icon_url=client.user.avatar_url)
 
-    await ctx.send("THIS COMMAND IS UNDER CONSTRUCTION")
+    await ctx.send(embed=embed)
 
 async def is_cog_defined(cog):
     db.execute('SELECT * FROM cogs WHERE cog_name=?', (cog,))

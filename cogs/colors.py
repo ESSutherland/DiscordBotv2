@@ -37,7 +37,7 @@ class Colors(commands.Cog):
     # COMMANDS #
     @commands.command(name='color', aliases=['colour'])
     @commands.check(helpers.role_helper.is_booster)
-    async def color_command(self, ctx, input_hex, id=None):
+    async def color_command(self, ctx, input_hex, user_id=None):
         print(f'{ctx.author}({ctx.author.id}) executed Color Command.')
 
         if (
@@ -56,11 +56,11 @@ class Colors(commands.Cog):
 
             color_img = discord.File('./images/colors/last_color.png')
 
-            if id is None:
+            if user_id is None:
                 author = ctx.author
                 author_id = ctx.author.id
             else:
-                author_id = int(id)
+                author_id = int(user_id)
                 author = ctx.guild.get_member(author_id)
 
             # DISABLE DEFAULT COLOR #

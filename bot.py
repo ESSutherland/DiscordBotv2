@@ -58,7 +58,9 @@ async def on_ready():
 # JOIN EVENT #
 @client.event
 async def on_member_join(member):
-    print(f'{member}({member.id}) has joined the server. Awaiting Screening')
+    message = f'{member} has joined the server the server.' if not member.pending else f'{member} has joined the server. Awaiting Screening'
+
+    print(message)
 
 # LEAVE EVENT #
 @client.event
@@ -70,14 +72,15 @@ async def on_member_remove(member):
     if await cogs.minecraft.has_whitelist(member.id):
         await cogs.minecraft.whitelist_remove_user(member.id)
 
+    message = f'{member} has left the server.' if not member.pending else f'{member} has left the server. (Member was still pending.)'
+
     if await helpers.channel_helper.is_channel_defined('admin'):
+
         await client.guilds[0].get_channel(
             await helpers.channel_helper.get_channel_id('admin')
-        ).send(
-            f'{member} has left the server.'
-        )
+        ).send(message)
 
-    print(f'{member}({member.id}) has left the server.')
+    print(message)
 
 # UPDATE EVENT #
 @client.event

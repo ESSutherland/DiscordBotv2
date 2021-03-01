@@ -146,6 +146,8 @@ async def on_member_ban(guild, user):
         channel = client.guilds[0].get_channel(await helpers.channel_helper.get_channel_id('admin'))
         ban_giver = ''
 
+        await asyncio.sleep(2)
+
         async for log in guild.audit_logs(limit=1, action=discord.AuditLogAction.ban, after=(datetime.datetime.now() - datetime.timedelta(seconds=5))):
             ban_giver = log.user
 

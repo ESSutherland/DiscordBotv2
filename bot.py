@@ -73,15 +73,22 @@ async def on_member_remove(member):
     if await cogs.minecraft.has_whitelist(member.id):
         await cogs.minecraft.whitelist_remove_user(member.id)
 
-    message = f'{member} has left the server.' if not member.pending else f'{member} has left the server. (Member was still pending.)'
+    leave_message = f'{member} has left the server.' if not member.pending else f'{member} has left the server. (Member was still pending.)'
 
     if await helpers.channel_helper.is_channel_defined('admin'):
 
         await client.guilds[0].get_channel(
             await helpers.channel_helper.get_channel_id('admin')
-        ).send(message)
+        ).send(leave_message)
 
-    print(message)
+    if await helpers.channel_helper.is_channel_defined('joins'):
+        channel = member.guild.get_channel(await helpers.channel_helper.get_channel_id('joins'))
+
+        async for message in channel.history(limit=20):
+            if message.author.id == member.id:
+                await channel.delete_messages([message])
+
+    print(leave_message)
 
 # UPDATE EVENT #
 @client.event
@@ -235,7 +242,7 @@ async def setchannel(ctx, channel_name, *, text):
 
     print(f'{ctx.author}({ctx.author.id}) executed SetChannel command.')
 
-    valid_roles = ['bot', 'booster', 'mod', 'admin', 'general']
+    valid_roles = ['bot', 'booster', 'mod', 'admin', 'general', 'joins']
     mentioned_channels = ctx.message.channel_mentions
     channel_name = channel_name.lower()
     if len(mentioned_channels) > 0:

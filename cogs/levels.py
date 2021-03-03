@@ -3,10 +3,12 @@ import discord
 import helpers.role_helper
 import helpers.channel_helper
 import helpers.embed_helper
+import requests
 
 from discord.ext import commands
 from configparser import ConfigParser
 from cogs.customcommands import is_command
+from PIL import Image, ImageDraw, ImageColor, ImageFont, ImageOps, ImageFilter
 
 # CONFIG INFO #
 cfg = ConfigParser()
@@ -28,7 +30,7 @@ class Levels(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        db.execute('CREATE TABLE IF NOT EXISTS levels (user_id text unique, level integer default 1, exp real default 0)')
+        db.execute('CREATE TABLE IF NOT EXISTS levels (user_id text unique, level integer default 1, exp real default 0.0)')
         connection.commit()
         print('Levels Module Loaded.')
 
@@ -155,6 +157,100 @@ class Levels(commands.Cog):
             cfg.write(cfg_file)
             cfg_file.close()
 
+    @commands.command(name='user')
+    async def user(self, ctx, user=None):
+        author = ctx.author
+
+        if user is not None:
+            if len(ctx.message.mentions) > 0:
+                author = ctx.message.mentions[0]
+
+        image = Image.open(fp='./images/levels/BG.png')
+        image_x, image_y = image.size
+
+        name = author.name
+
+        user_desc = f'{name}#{author.discriminator}'
+
+        font_size = 1
+        font = ImageFont.truetype('./images/fonts/Oleg Stepanov - SimpleStamp.otf', font_size)
+        while font.getsize(user_desc)[0] < 420 and font.getsize(user_desc)[1] < 60:
+            font_size += 1
+            font = ImageFont.truetype('./images/fonts/Oleg Stepanov - SimpleStamp.otf', font_size)
+
+        role_font = ImageFont.truetype('./images/fonts/Oleg Stepanov - SimpleStamp.otf', 20)
+        label_font = ImageFont.truetype('./images/fonts/Oleg Stepanov - SimpleStamp.otf', 42)
+
+        user_desc_size = font.getsize(user_desc)
+
+        avatar = Image.open(requests.get(author.avatar_url, stream=True).raw).convert('RGBA')
+        avatar = avatar.resize((200, 200))
+
+        image_draw = ImageDraw.Draw(im=image)
+
+        mask = Image.open('./images/levels/mask.png').convert('L')
+        output = ImageOps.fit(avatar, mask.size, centering=(0.5, 0.5))
+        output.putalpha(mask)
+
+        rect = Image.new('RGBA', (image_x - 50, image_y - 50), color=(0, 0, 0, 70))
+
+        last_role = None
+        start_roles = (150, 210)
+        role_x, role_y = start_roles
+        role_list = author.roles
+        role_list.reverse()
+
+        user_exp = await get_exp(author.id)
+
+        exp_bar = Image.new('RGBA', (450, 20), color=ImageColor.getrgb('#616161'))
+        exp_bar_size = exp_bar.size
+        user_exp_bar = Image.new('RGBA', (int(exp_bar_size[0]*(user_exp/level_exp)), 20),
+                                 color=ImageColor.getrgb(str(self.client.guilds[0].get_member(self.client.user.id).color)))
+
+        exp_bar.paste(user_exp_bar, (0, 0), user_exp_bar)
+
+        image.paste(rect, (25, 25), rect)
+        image.paste(output, (40, 40), output)
+        image.paste(exp_bar, (240, 415), exp_bar)
+
+        image_draw.text(xy=(int((image_x/2)-(user_desc_size[0]/2)), 80), text=user_desc, fill='white', font=font)
+        image_draw.text(xy=(40, 200), text='Roles: ', font=label_font, fill='white')
+        image_draw.text(xy=(40, 400), text=f'Level {await get_level(author.id)}', font=label_font, fill='white')
+        image_draw.text(xy=(700, 415),
+                        text=f'{user_exp if not user_exp.is_integer() else int(user_exp)}/{level_exp}',
+                        font=role_font, fill='white')
+
+        for role in role_list:
+            role_size = role_font.getsize(role.name)
+            if role.name != '@everyone':
+
+                color_str = str(role.color) if (str(role.color) != '#000000') else '#b3b3b3'
+
+                role_color = ImageColor.getrgb(color_str)
+                color_modifier = 1.5
+                bg_color = (int(role_color[0]*color_modifier), int(role_color[1]*color_modifier), int(role_color[2]*color_modifier))
+                role_box = Image.new('RGBA', ((role_size[0] + 20), 40), color=bg_color)
+                role_box_size = role_box.size
+                role_draw = ImageDraw.Draw(im=role_box)
+                if last_role is not None:
+                    role_x += (last_role[0] + 10)
+
+                if role_x + role_box_size[0] > image_x-50:
+                    role_x = start_roles[0]
+                    role_y += (role_box_size[1] + 10)
+
+                text_x, text_y = ((role_box_size[0]/2 - role_size[0]/2), (role_box_size[1]/2 - role_size[1]/2))
+
+                role_draw.text(xy=(text_x, text_y), text=role.name, font=role_font, fill=role_color)
+                role_box = add_corners(role_box, 20)
+                image.paste(role_box, (role_x, role_y), role_box)
+
+                last_role = role_box_size
+
+        image.save('./images/levels/last_user.png')
+
+        await ctx.send(file=discord.File(fp='./images/levels/last_user.png'))
+
 async def has_level(user_id):
     db.execute('SELECT * FROM levels WHERE user_id=?', (user_id,))
     row = db.fetchone()
@@ -171,7 +267,7 @@ async def get_exp(user_id):
     if row is not None:
         return float(row[0])
     else:
-        return 0
+        return 0.0
 
 async def get_level(user_id):
     db.execute('SELECT level FROM levels WHERE user_id=?', (user_id,))
@@ -220,6 +316,19 @@ async def get_multiplier(message):
             multiplier = 2
 
     return multiplier
+
+def add_corners(im, rad):
+    circle = Image.new('L', (rad * 2, rad * 2), 0)
+    draw = ImageDraw.Draw(circle)
+    draw.ellipse((0, 0, rad * 2, rad * 2), fill=255)
+    alpha = Image.new('L', im.size, 255)
+    w, h = im.size
+    alpha.paste(circle.crop((0, 0, rad, rad)), (0, 0))
+    alpha.paste(circle.crop((0, rad, rad, rad * 2)), (0, h - rad))
+    alpha.paste(circle.crop((rad, 0, rad * 2, rad)), (w - rad, 0))
+    alpha.paste(circle.crop((rad, rad, rad * 2, rad * 2)), (w - rad, h - rad))
+    im.putalpha(alpha)
+    return im
 
 def setup(client):
     client.add_cog(Levels(client))

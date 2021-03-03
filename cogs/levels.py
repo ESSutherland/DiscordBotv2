@@ -231,7 +231,7 @@ class Levels(commands.Cog):
 
                 role_color = ImageColor.getrgb(color_str)
 
-                text_color = lighten_color(role_color[0], role_color[1], role_color[2], 0.5)
+                text_color = lighten_color(role_color[0], role_color[1], role_color[2], 0.5) if role_color != (255, 255, 255) else darken_color(role_color[0], role_color[1], role_color[2], 0.5)
 
                 role_box = Image.new('RGBA', ((role_size[0] + 20), 40), color=role_color)
                 role_box_size = role_box.size

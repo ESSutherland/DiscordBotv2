@@ -230,9 +230,6 @@ class Levels(commands.Cog):
                 color_str = str(role.color) if (str(role.color) != '#000000') else '#b3b3b3'
 
                 role_color = ImageColor.getrgb(color_str)
-                print(f'{role.name} - {role_color}')
-                light_modifier = 1.5
-                dark_modifier = 0.6
 
                 text_color = lighten_color(role_color[0], role_color[1], role_color[2], 0.5)
 

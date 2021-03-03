@@ -9,6 +9,7 @@ from discord.ext import commands
 from configparser import ConfigParser
 from cogs.customcommands import is_command
 from PIL import Image, ImageDraw, ImageColor, ImageFont, ImageOps, ImageFilter
+from colorsys import rgb_to_hls, hls_to_rgb
 
 # CONFIG INFO #
 cfg = ConfigParser()
@@ -229,16 +230,11 @@ class Levels(commands.Cog):
                 color_str = str(role.color) if (str(role.color) != '#000000') else '#b3b3b3'
 
                 role_color = ImageColor.getrgb(color_str)
+                print(f'{role.name} - {role_color}')
                 light_modifier = 1.5
                 dark_modifier = 0.6
 
-                text_color = []
-
-                for n in role_color:
-                    if n > 220:
-                        text_color.append(int(n*dark_modifier))
-                    else:
-                        text_color.append(int(n*light_modifier))
+                text_color = lighten_color(role_color[0], role_color[1], role_color[2], 0.5)
 
                 role_box = Image.new('RGBA', ((role_size[0] + 20), 40), color=role_color)
                 role_box_size = role_box.size
@@ -340,6 +336,18 @@ def add_corners(im, rad):
     alpha.paste(circle.crop((rad, rad, rad * 2, rad * 2)), (w - rad, h - rad))
     im.putalpha(alpha)
     return im
+
+def adjust_color_lightness(r, g, b, factor):
+    h, l, s = rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
+    l = max(min(l * factor, 1.0), 0.0)
+    r, g, b = hls_to_rgb(h, l, s)
+    return int(r * 255), int(g * 255), int(b * 255)
+
+def lighten_color(r, g, b, factor=0.1):
+    return adjust_color_lightness(r, g, b, 1 + factor)
+
+def darken_color(r, g, b, factor=0.1):
+    return adjust_color_lightness(r, g, b, 1 - factor)
 
 def setup(client):
     client.add_cog(Levels(client))

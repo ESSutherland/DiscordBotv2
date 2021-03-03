@@ -195,12 +195,13 @@ class Levels(commands.Cog):
         rect = Image.new('RGBA', (image_x - 50, image_y - 50), color=(0, 0, 0, 70))
 
         last_role = None
-        start_roles = (150, 210)
+        start_roles = (150, 200)
         role_x, role_y = start_roles
         role_list = author.roles
         role_list.reverse()
 
         user_exp = await get_exp(author.id)
+        user_joined = author.joined_at
 
         exp_bar = Image.new('RGBA', (450, 20), color=ImageColor.getrgb('#616161'))
         exp_bar_size = exp_bar.size
@@ -214,8 +215,9 @@ class Levels(commands.Cog):
         image.paste(exp_bar, (240, 415), exp_bar)
 
         image_draw.text(xy=(int((image_x/2)-(user_desc_size[0]/2)), 80), text=user_desc, fill='white', font=font)
-        image_draw.text(xy=(40, 200), text='Roles: ', font=label_font, fill='white')
+        image_draw.text(xy=(40, 190), text='Roles: ', font=label_font, fill='white')
         image_draw.text(xy=(40, 400), text=f'Level {await get_level(author.id)}', font=label_font, fill='white')
+        image_draw.text(xy=(40, 320), text=f'Joined: {user_joined.strftime("%a, %b %d, %Y")}', font=label_font, fill='white')
         image_draw.text(xy=(700, 415),
                         text=f'{user_exp if not user_exp.is_integer() else int(user_exp)}/{level_exp}',
                         font=role_font, fill='white')
@@ -227,9 +229,20 @@ class Levels(commands.Cog):
                 color_str = str(role.color) if (str(role.color) != '#000000') else '#b3b3b3'
 
                 role_color = ImageColor.getrgb(color_str)
-                color_modifier = 1.5
-                bg_color = (int(role_color[0]*color_modifier), int(role_color[1]*color_modifier), int(role_color[2]*color_modifier))
-                role_box = Image.new('RGBA', ((role_size[0] + 20), 40), color=bg_color)
+                light_modifier = 1.5
+                dark_modifier = 0.6
+
+                text_color = []
+
+                for n in role_color:
+                    if n > 200:
+                        text_color.append(int(n*dark_modifier))
+                    elif n == 0:
+                        text_color.append(30)
+                    else:
+                        text_color.append(int(n*light_modifier))
+
+                role_box = Image.new('RGBA', ((role_size[0] + 20), 40), color=role_color)
                 role_box_size = role_box.size
                 role_draw = ImageDraw.Draw(im=role_box)
                 if last_role is not None:
@@ -241,7 +254,7 @@ class Levels(commands.Cog):
 
                 text_x, text_y = ((role_box_size[0]/2 - role_size[0]/2), (role_box_size[1]/2 - role_size[1]/2))
 
-                role_draw.text(xy=(text_x, text_y), text=role.name, font=role_font, fill=role_color)
+                role_draw.text(xy=(text_x, text_y), text=role.name, font=role_font, fill=tuple(text_color))
                 role_box = add_corners(role_box, 20)
                 image.paste(role_box, (role_x, role_y), role_box)
 

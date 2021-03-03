@@ -175,6 +175,11 @@ async def update_villager_db():
                     villager_data['catch-translations'].get('catch-USen'), villager_data.get('hobby')))
         connection.commit()
 
+def setup(client):
+    client.add_cog(AnimalCrossing(client))
+
+# FUNCTIONS FOUND ONLINE #
+
 def create_rounded_rectangle_mask(size, radius, color=(255, 255, 255, 0)):
     factor = 5  # Factor to increase the image size that I can later antialiaze the corners
     radius = radius * factor
@@ -218,36 +223,33 @@ def add_corners(im, rad):
     return im
 
 def get_sign(month, day):
-
     month = month.lower()
     day = int(day[:-2])
+    astro_sign = ''
 
     if month == 'december':
-        astro_sign = 'Sagittarius' if (day < 22) else 'capricorn'
+        astro_sign = 'sagittarius' if (day < 22) else 'capricorn'
     elif month == 'january':
-        astro_sign = 'Capricorn' if (day < 20) else 'aquarius'
+        astro_sign = 'capricorn' if (day < 20) else 'aquarius'
     elif month == 'february':
-        astro_sign = 'Aquarius' if (day < 19) else 'pisces'
+        astro_sign = 'aquarius' if (day < 19) else 'pisces'
     elif month == 'march':
-        astro_sign = 'Pisces' if (day < 21) else 'aries'
+        astro_sign = 'pisces' if (day < 21) else 'aries'
     elif month == 'april':
-        astro_sign = 'Aries' if (day < 20) else 'taurus'
+        astro_sign = 'aries' if (day < 20) else 'taurus'
     elif month == 'may':
-        astro_sign = 'Taurus' if (day < 21) else 'gemini'
+        astro_sign = 'taurus' if (day < 21) else 'gemini'
     elif month == 'june':
-        astro_sign = 'Gemini' if (day < 21) else 'cancer'
+        astro_sign = 'gemini' if (day < 21) else 'cancer'
     elif month == 'july':
-        astro_sign = 'Cancer' if (day < 23) else 'leo'
+        astro_sign = 'cancer' if (day < 23) else 'leo'
     elif month == 'august':
-        astro_sign = 'Leo' if (day < 23) else 'virgo'
+        astro_sign = 'leo' if (day < 23) else 'virgo'
     elif month == 'september':
-        astro_sign = 'Virgo' if (day < 23) else 'libra'
+        astro_sign = 'virgo' if (day < 23) else 'libra'
     elif month == 'october':
-        astro_sign = 'Libra' if (day < 23) else 'scorpio'
+        astro_sign = 'libra' if (day < 23) else 'scorpio'
     elif month == 'november':
         astro_sign = 'scorpio' if (day < 22) else 'sagittarius'
 
-    return astro_sign.lower()
-
-def setup(client):
-    client.add_cog(AnimalCrossing(client))
+    return astro_sign

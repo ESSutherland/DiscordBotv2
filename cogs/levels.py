@@ -164,16 +164,11 @@ class Levels(commands.Cog):
         print(f'{ctx.author}({ctx.author.id}) executed User command.')
 
         author = ctx.author
-
         if user is not None:
             if len(ctx.message.mentions) > 0:
                 author = ctx.message.mentions[0]
 
-        bg_image = Image.open(fp='./images/levels/BG.png')
-        image_x, image_y = bg_image.size
-
         name = author.name
-
         user_desc = f'{name}#{author.discriminator}'
 
         font_size = 1
@@ -187,32 +182,26 @@ class Levels(commands.Cog):
 
         user_desc_size = font.getsize(user_desc)
 
-        avatar = Image.open(requests.get(author.avatar_url, stream=True).raw).convert('RGBA')
-        avatar = avatar.resize((200, 200))
-
+        bg_image = Image.open(fp='./images/levels/BG.png')
+        image_x, image_y = bg_image.size
         image_draw = ImageDraw.Draw(im=bg_image)
 
+        avatar = Image.open(requests.get(author.avatar_url, stream=True).raw).convert('RGBA')
+        avatar = avatar.resize((200, 200))
         mask = Image.open('./images/levels/mask.png').convert('L')
         output = ImageOps.fit(avatar, mask.size, centering=(0.5, 0.5))
         output.putalpha(mask)
 
         rect = Image.new('RGBA', (image_x - 50, image_y - 50), color=(0, 0, 0, 70))
 
-        last_role = None
-        start_roles = (150, 200)
-        role_x, role_y = start_roles
-        role_list = author.roles
-        role_list.reverse()
-
         user_exp = await get_exp(author.id)
-        user_joined = author.joined_at
-
         exp_bar = Image.new('RGBA', (450, 20), color=ImageColor.getrgb('#616161'))
         exp_bar_size = exp_bar.size
         user_exp_bar = Image.new('RGBA', (int(exp_bar_size[0]*(user_exp/level_exp)), 20),
                                  color=ImageColor.getrgb(str(self.client.guilds[0].get_member(self.client.user.id).color)))
-
         exp_bar.paste(user_exp_bar, (0, 0), user_exp_bar)
+
+        user_joined = author.joined_at
 
         bg_image.paste(rect, (25, 25), rect)
         bg_image.paste(output, (40, 40), output)
@@ -226,16 +215,20 @@ class Levels(commands.Cog):
                         text=f'{user_exp if not user_exp.is_integer() else int(user_exp)}/{level_exp}',
                         font=role_font, fill='white')
 
+        last_role = None
+        start_roles = (150, 200)
+        role_x, role_y = start_roles
+        role_list = author.roles
+        role_list.reverse()
+
         for role in role_list:
             role_size = role_font.getsize(role.name)
             if role.name != '@everyone':
 
                 color_str = str(role.color) if (str(role.color) != '#000000') else '#b3b3b3'
-
                 role_color = ImageColor.getrgb(color_str)
 
                 darken = False
-
                 for n in role_color:
                     if n > 230:
                         darken = True
@@ -245,6 +238,7 @@ class Levels(commands.Cog):
                 role_box = Image.new('RGBA', ((role_size[0] + 20), 40), color=role_color)
                 role_box_size = role_box.size
                 role_draw = ImageDraw.Draw(im=role_box)
+
                 if last_role is not None:
                     role_x += (last_role[0] + 10)
 
@@ -252,7 +246,7 @@ class Levels(commands.Cog):
                     role_x = start_roles[0]
                     role_y += (role_box_size[1] + 10)
 
-                text_x, text_y = ((role_box_size[0]/2 - role_size[0]/2), (role_box_size[1]/2 - 27/2))
+                text_x, text_y = ((role_box_size[0]/2 - role_size[0]/2), (role_box_size[1]/2 - 30/3))
 
                 role_draw.text(xy=(text_x, text_y), text=role.name, font=role_font, fill=tuple(text_color))
                 role_box = add_corners(role_box, 20)
@@ -330,6 +324,11 @@ async def get_multiplier(message):
 
     return multiplier
 
+def setup(client):
+    client.add_cog(Levels(client))
+
+# FUNCTIONS FOUND ONLINE #
+
 def add_corners(im, rad):
     circle = Image.new('L', (rad * 2, rad * 2), 0)
     draw = ImageDraw.Draw(circle)
@@ -354,6 +353,3 @@ def lighten_color(r, g, b, factor=0.1):
 
 def darken_color(r, g, b, factor=0.1):
     return adjust_color_lightness(r, g, b, 1 - factor)
-
-def setup(client):
-    client.add_cog(Levels(client))

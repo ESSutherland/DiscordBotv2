@@ -160,14 +160,17 @@ class Levels(commands.Cog):
 
     @commands.command(name='user')
     async def user(self, ctx, user=None):
+
+        print(f'{ctx.author}({ctx.author.id}) executed User command.')
+
         author = ctx.author
 
         if user is not None:
             if len(ctx.message.mentions) > 0:
                 author = ctx.message.mentions[0]
 
-        image = Image.open(fp='./images/levels/BG.png')
-        image_x, image_y = image.size
+        bg_image = Image.open(fp='./images/levels/BG.png')
+        image_x, image_y = bg_image.size
 
         name = author.name
 
@@ -187,7 +190,7 @@ class Levels(commands.Cog):
         avatar = Image.open(requests.get(author.avatar_url, stream=True).raw).convert('RGBA')
         avatar = avatar.resize((200, 200))
 
-        image_draw = ImageDraw.Draw(im=image)
+        image_draw = ImageDraw.Draw(im=bg_image)
 
         mask = Image.open('./images/levels/mask.png').convert('L')
         output = ImageOps.fit(avatar, mask.size, centering=(0.5, 0.5))
@@ -211,9 +214,9 @@ class Levels(commands.Cog):
 
         exp_bar.paste(user_exp_bar, (0, 0), user_exp_bar)
 
-        image.paste(rect, (25, 25), rect)
-        image.paste(output, (40, 40), output)
-        image.paste(exp_bar, (240, 415), exp_bar)
+        bg_image.paste(rect, (25, 25), rect)
+        bg_image.paste(output, (40, 40), output)
+        bg_image.paste(exp_bar, (240, 415), exp_bar)
 
         image_draw.text(xy=(int((image_x/2)-(user_desc_size[0]/2)), 80), text=user_desc, fill='white', font=font)
         image_draw.text(xy=(40, 190), text='Roles: ', font=label_font, fill='white')
@@ -231,7 +234,13 @@ class Levels(commands.Cog):
 
                 role_color = ImageColor.getrgb(color_str)
 
-                text_color = lighten_color(role_color[0], role_color[1], role_color[2], 0.5) if role_color != (255, 255, 255) else darken_color(role_color[0], role_color[1], role_color[2], 0.5)
+                darken = False
+
+                for n in role_color:
+                    if n > 230:
+                        darken = True
+
+                text_color = lighten_color(role_color[0], role_color[1], role_color[2], 0.5) if not darken else darken_color(role_color[0], role_color[1], role_color[2], 0.5)
 
                 role_box = Image.new('RGBA', ((role_size[0] + 20), 40), color=role_color)
                 role_box_size = role_box.size
@@ -243,15 +252,15 @@ class Levels(commands.Cog):
                     role_x = start_roles[0]
                     role_y += (role_box_size[1] + 10)
 
-                text_x, text_y = ((role_box_size[0]/2 - role_size[0]/2), (role_box_size[1]/2 - role_size[1]/2))
+                text_x, text_y = ((role_box_size[0]/2 - role_size[0]/2), (role_box_size[1]/2 - 27/2))
 
                 role_draw.text(xy=(text_x, text_y), text=role.name, font=role_font, fill=tuple(text_color))
                 role_box = add_corners(role_box, 20)
-                image.paste(role_box, (role_x, role_y), role_box)
+                bg_image.paste(role_box, (role_x, role_y), role_box)
 
                 last_role = role_box_size
 
-        image.save('./images/levels/last_user.png')
+        bg_image.save('./images/levels/last_user.png')
 
         await ctx.send(file=discord.File(fp='./images/levels/last_user.png'))
 

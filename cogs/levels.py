@@ -237,8 +237,6 @@ class Levels(commands.Cog):
                 for n in role_color:
                     if n > 200:
                         text_color.append(int(n*dark_modifier))
-                    elif n == 0:
-                        text_color.append(30)
                     else:
                         text_color.append(int(n*light_modifier))
 

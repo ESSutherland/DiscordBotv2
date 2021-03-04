@@ -228,8 +228,6 @@ class Levels(commands.Cog):
                 color_str = str(role.color) if (str(role.color) != '#000000') else '#b3b3b3'
                 role_color = ImageColor.getrgb(color_str)
 
-                print(role_color)
-
                 darken = False
                 for n in role_color:
                     if n > 230:

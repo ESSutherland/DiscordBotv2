@@ -31,7 +31,6 @@ class BoostMessage(commands.Cog):
             if await helpers.channel_helper.is_channel_defined('general'):
                 global boost_message
                 if '{user}' in boost_message:
-                    print(True)
                     boost_message = boost_message.replace('{user}', message.author.mention)
                 await message.guild.get_channel(await helpers.channel_helper.get_channel_id('general')).send(
                     boost_message

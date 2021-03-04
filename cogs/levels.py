@@ -181,9 +181,19 @@ class Levels(commands.Cog):
         label_font = ImageFont.truetype('./images/fonts/Oleg Stepanov - SimpleStamp.otf', 42)
 
         user_desc_size = font.getsize(user_desc)
+        guild_name_size = label_font.getsize(ctx.guild.name)
 
-        bg_image = Image.open(fp='./images/levels/BG.png')
+        try:
+            bg_image = Image.open(fp=f'./images/levels/{ctx.guild.id}.png')
+        except FileNotFoundError:
+            bg_image = Image.open(fp=f'./images/levels/BG.png')
+
+        bg_image = bg_image.resize((840, 500))
+
         image_x, image_y = bg_image.size
+
+        print(image_x, image_y)
+
         image_draw = ImageDraw.Draw(im=bg_image)
 
         avatar = Image.open(requests.get(author.avatar_url, stream=True).raw).convert('RGBA')
@@ -192,7 +202,7 @@ class Levels(commands.Cog):
         output = ImageOps.fit(avatar, mask.size, centering=(0.5, 0.5))
         output.putalpha(mask)
 
-        rect = Image.new('RGBA', (image_x - 50, image_y - 50), color=(0, 0, 0, 70))
+        rect = Image.new('RGBA', (image_x - 50, image_y - 50), color=(0, 0, 0, 120))
 
         user_exp = await get_exp(author.id)
         exp_bar = Image.new('RGBA', (450, 20), color=ImageColor.getrgb('#616161'))
@@ -207,10 +217,11 @@ class Levels(commands.Cog):
         bg_image.paste(output, (40, 40), output)
         bg_image.paste(exp_bar, (240, 415), exp_bar)
 
-        image_draw.text(xy=(int((image_x/2)-(user_desc_size[0]/2)), 80), text=user_desc, fill='white', font=font)
+        image_draw.text(xy=(int((image_x/2)-(user_desc_size[0]/2)), 100), text=user_desc, fill='white', font=font)
         image_draw.text(xy=(40, 190), text='Roles: ', font=label_font, fill='white')
         image_draw.text(xy=(40, 400), text=f'Level {await get_level(author.id)}', font=label_font, fill='white')
         image_draw.text(xy=(40, 320), text=f'Joined: {user_joined.strftime("%a, %b %d, %Y")}', font=label_font, fill='white')
+        image_draw.text(xy=(int((image_x/2)-(guild_name_size[0]/2)), 30), text=f'{ctx.guild.name}', font=label_font, fill='white')
         image_draw.text(xy=(700, 415),
                         text=f'{user_exp if not user_exp.is_integer() else int(user_exp)}/{level_exp}',
                         font=role_font, fill='white')

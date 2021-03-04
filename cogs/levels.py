@@ -241,6 +241,9 @@ class Levels(commands.Cog):
                     if n < 20:
                         color_scale = 5
                         additional = 10
+                    else:
+                        color_scale = 0.5
+                        break
 
                 text_color = lighten_color(role_color[0] + additional, role_color[1] + additional, role_color[2] + additional, color_scale) if not darken else darken_color(role_color[0], role_color[1], role_color[2], color_scale)
 

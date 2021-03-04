@@ -45,9 +45,7 @@ async def is_mod(ctx):
 
 async def is_booster(ctx):
     if await is_role_defined('booster'):
-        if (await has_role(ctx.guild, ctx.author.id, 'booster') or
-                ctx.author.guild_permissions.administrator
-        ):
+        if await has_role(ctx.guild, ctx.author.id, 'booster'):
             return True
         else:
             return False

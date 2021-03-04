@@ -96,12 +96,8 @@ class Colors(commands.Cog):
 
                 if mod_role in author.roles:
                     await ctx.guild.edit_role_positions(positions={role: mod_role.position})
-                    print('HAS MOD')
                 else:
                     await ctx.guild.edit_role_positions(positions={role: mod_role.position - 1})
-                    print('NO MOD')
-
-                print(ctx.guild.roles)
 
                 await add_color_role(author_id, role.id)
 

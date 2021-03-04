@@ -228,12 +228,21 @@ class Levels(commands.Cog):
                 color_str = str(role.color) if (str(role.color) != '#000000') else '#b3b3b3'
                 role_color = ImageColor.getrgb(color_str)
 
+                print(role_color)
+
                 darken = False
                 for n in role_color:
                     if n > 230:
                         darken = True
 
-                text_color = lighten_color(role_color[0], role_color[1], role_color[2], 0.5) if not darken else darken_color(role_color[0], role_color[1], role_color[2], 0.5)
+                color_scale = 0.5
+                additional = 0
+                for n in role_color:
+                    if n < 20:
+                        color_scale = 5
+                        additional = 10
+
+                text_color = lighten_color(role_color[0] + additional, role_color[1] + additional, role_color[2] + additional, color_scale) if not darken else darken_color(role_color[0], role_color[1], role_color[2], color_scale)
 
                 role_box = Image.new('RGBA', ((role_size[0] + 20), 40), color=role_color)
                 role_box_size = role_box.size

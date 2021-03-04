@@ -192,8 +192,6 @@ class Levels(commands.Cog):
 
         image_x, image_y = bg_image.size
 
-        print(image_x, image_y)
-
         image_draw = ImageDraw.Draw(im=bg_image)
 
         avatar = Image.open(requests.get(author.avatar_url, stream=True).raw).convert('RGBA')

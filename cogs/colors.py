@@ -36,7 +36,7 @@ class Colors(commands.Cog):
 
     # COMMANDS #
     @commands.command(name='color', aliases=['colour'])
-    @commands.check(helpers.role_helper.is_booster)
+    @helpers.role_helper.is_booster(False)
     async def color_command(self, ctx, input_hex, user_id=None):
         print(f'{ctx.author}({ctx.author.id}) executed Color Command.')
 

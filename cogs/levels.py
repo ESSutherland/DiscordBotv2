@@ -231,7 +231,7 @@ class Levels(commands.Cog):
         name_xy = (int((image_x / 2) - (user_desc_size[0] / 2)), 100)
         emoji_xy = [0, name_xy[1]+5]
 
-        emoji_font = ImageFont.truetype('./images/fonts/TwitterColorEmoji-SVGinOT.ttf', font_size)
+        emoji_font = ImageFont.truetype('./images/fonts/seguiemj.ttf', font_size)
 
         for section in user_desc.split('%'):
             if len(emojis) > 0 and count < len(emojis):

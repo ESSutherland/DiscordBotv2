@@ -181,7 +181,7 @@ class Levels(commands.Cog):
             else:
                 name += letter
 
-        user_desc = f'{name}#{author.discriminator}'
+        user_desc = f'{name} #{author.discriminator}'
 
         font_size = 1
         font = ImageFont.truetype('./images/fonts/Oleg Stepanov - SimpleStamp.otf', font_size)
@@ -231,7 +231,7 @@ class Levels(commands.Cog):
         name_xy = (int((image_x / 2) - (user_desc_size[0] / 2)), 100)
         emoji_xy = [0, name_xy[1]+5]
 
-        emoji_font = ImageFont.truetype('./images/fonts/seguiemj.ttf', font_size)
+        emoji_font = ImageFont.truetype('./images/fonts/TwitterColorEmoji-SVGinOT.ttf', font_size)
 
         for section in user_desc.split('%'):
             if len(emojis) > 0 and count < len(emojis):
@@ -239,7 +239,7 @@ class Levels(commands.Cog):
                 image_draw.text(xy=tuple(emoji_xy), text=emojis[count], font=emoji_font, embedded_color=True)
                 count += 1
 
-        image_draw.text(xy=name_xy, text=user_desc.replace('%', '  '), fill='white', font=font)
+        image_draw.text(xy=name_xy, text=user_desc.strip().replace('%', '  '), fill='white', font=font)
         image_draw.text(xy=(40, 190), text='Roles: ', font=label_font, fill='white')
         image_draw.text(xy=(40, 400), text=f'Level {await get_level(author.id)}', font=label_font, fill='white')
         image_draw.text(xy=(40, 320), text=f'Joined: {user_joined.strftime("%a, %b %d, %Y")}', font=label_font, fill='white')

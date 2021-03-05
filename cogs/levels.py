@@ -4,6 +4,8 @@ import helpers.role_helper
 import helpers.channel_helper
 import helpers.embed_helper
 import requests
+import emoji
+import unicodedata
 
 from discord.ext import commands
 from configparser import ConfigParser
@@ -164,11 +166,21 @@ class Levels(commands.Cog):
         print(f'{ctx.author}({ctx.author.id}) executed User command.')
 
         author = ctx.author
+
         if user is not None:
             if len(ctx.message.mentions) > 0:
                 author = ctx.message.mentions[0]
 
-        name = author.name
+        name = ''
+        emojis = []
+        for letter in author.name:
+            if letter in emoji.UNICODE_EMOJI.get('en'):
+                name += '%'
+                if 'MODIFIER' not in unicodedata.name(letter):
+                    emojis.append(letter)
+            else:
+                name += letter
+
         user_desc = f'{name}#{author.discriminator}'
 
         font_size = 1
@@ -215,7 +227,19 @@ class Levels(commands.Cog):
         bg_image.paste(output, (40, 40), output)
         bg_image.paste(exp_bar, (240, 415), exp_bar)
 
-        image_draw.text(xy=(int((image_x/2)-(user_desc_size[0]/2)), 100), text=user_desc, fill='white', font=font)
+        count = 0
+        name_xy = (int((image_x / 2) - (user_desc_size[0] / 2)), 100)
+        emoji_xy = [0, name_xy[1]+5]
+
+        emoji_font = ImageFont.truetype('./images/fonts/seguiemj.ttf', font_size)
+
+        for section in user_desc.split('%'):
+            if len(emojis) > 0 and count < len(emojis):
+                emoji_xy[0] += (name_xy[0] + font.getsize(section)[0] + 5)
+                image_draw.text(xy=tuple(emoji_xy), text=emojis[count], font=emoji_font, embedded_color=True)
+                count += 1
+
+        image_draw.text(xy=name_xy, text=user_desc.replace('%', '  '), fill='white', font=font)
         image_draw.text(xy=(40, 190), text='Roles: ', font=label_font, fill='white')
         image_draw.text(xy=(40, 400), text=f'Level {await get_level(author.id)}', font=label_font, fill='white')
         image_draw.text(xy=(40, 320), text=f'Joined: {user_joined.strftime("%a, %b %d, %Y")}', font=label_font, fill='white')

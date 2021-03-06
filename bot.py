@@ -59,13 +59,15 @@ async def on_ready():
 # JOIN EVENT #
 @client.event
 async def on_member_join(member):
-    message = f'{member} has joined the server the server.' if not member.pending else f'{member} has joined the server. Awaiting Screening'
+    await asyncio.sleep(1)
+    message = f'{member} has joined the server.' if not member.pending else f'{member} has joined the server. Awaiting Screening.'
 
     print(message)
 
 # LEAVE EVENT #
 @client.event
 async def on_member_remove(member):
+    await asyncio.sleep(1)
 
     if await cogs.colors.has_color_role(member.id):
         await cogs.colors.delete_color_role(client.guilds[0], member.id)

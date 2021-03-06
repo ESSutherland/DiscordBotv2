@@ -48,11 +48,6 @@ class CustomCommands(commands.Cog):
                 if str(message.author.id) == level:
                     await send_response(message.channel, await get_response(message.content), message.author)
 
-        # if message.content == 'one piece':
-        #     await message.channel.send(
-        #         file=discord.File(fp='./images/onepiece.jpg')
-        #     )
-
     @commands.command(name='command')
     @commands.check(helpers.role_helper.is_mod)
     async def custom_command(self, ctx, command_name, level, *, response):

@@ -1,0 +1,7 @@
+discord.py
+mojang-api-3
+mcrcon
+Pillow
+mal-api
+emoji
+pokebase

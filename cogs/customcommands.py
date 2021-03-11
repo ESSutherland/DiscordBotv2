@@ -32,20 +32,20 @@ class CustomCommands(commands.Cog):
 
             if level == '-b':
                 if await helpers.role_helper.is_role_defined('booster'):
-                    if await helpers.role_helper.has_role(message.guild, message.author.id, 'booster'):
+                    if await helpers.role_helper.has_role(message.guild, message.author.id, 'booster') or message.author.guild_permissions.administrator:
                         await send_response(message.channel, await get_response(message.content), message.author)
             elif level == '-s':
                 if await helpers.role_helper.is_role_defined('sub'):
-                    if await helpers.role_helper.has_role(message.guild, message.author.id, 'mod'):
+                    if await helpers.role_helper.has_role(message.guild, message.author.id, 'sub') or message.author.guild_permissions.administrator:
                         await send_response(message.channel, await get_response(message.content), message.author)
             elif level == '-m':
                 if await helpers.role_helper.is_role_defined('mod'):
-                    if await helpers.role_helper.has_role(message.guild, message.author.id, 'mod'):
+                    if await helpers.role_helper.has_role(message.guild, message.author.id, 'mod') or message.author.guild_permissions.administrator:
                         await send_response(message.channel, await get_response(message.content), message.author)
             elif level == '-a':
                 await send_response(message.channel, await get_response(message.content), message.author)
             else:
-                if str(message.author.id) == level:
+                if str(message.author.id) == level or message.author.guild_permissions.administrator:
                     await send_response(message.channel, await get_response(message.content), message.author)
 
     @commands.command(name='command')

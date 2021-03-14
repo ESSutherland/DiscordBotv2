@@ -16,7 +16,7 @@ class AnimeModule(commands.Cog):
     @commands.command(name='anime')
     async def anime(self, ctx, *, params):
         print(f'{ctx.author}({ctx.author.id}) executed Anime command.')
-        await ctx.send(embed=discord.Embed(
+        message = await ctx.send(embed=discord.Embed(
             title='Fetching Data...Please Wait.',
             color=self.client.guilds[0].get_member(self.client.user.id).color
         ))
@@ -24,11 +24,8 @@ class AnimeModule(commands.Cog):
         search = AnimeSearch(params)
         anime_data = search.results[0]
 
-        message_id = ctx.channel.last_message_id
-
         anime_data_2 = Anime(anime_data.mal_id)
 
-        message = await ctx.channel.fetch_message(message_id)
         await message.delete()
 
         embed = discord.Embed(
@@ -66,7 +63,7 @@ class AnimeModule(commands.Cog):
     @commands.command(name='manga')
     async def manga(self, ctx, *, params):
         print(f'{ctx.author}({ctx.author.id}) executed Manga command.')
-        await ctx.send(embed=discord.Embed(
+        message = await ctx.send(embed=discord.Embed(
             title='Fetching Data...Please Wait.',
             color=self.client.guilds[0].get_member(self.client.user.id).color
         ))
@@ -74,11 +71,8 @@ class AnimeModule(commands.Cog):
         search = MangaSearch(params)
         manga_data = search.results[0]
 
-        message_id = ctx.channel.last_message_id
-
         manga_data_2 = Manga(manga_data.mal_id)
 
-        message = await ctx.channel.fetch_message(message_id)
         await message.delete()
 
         embed = discord.Embed(

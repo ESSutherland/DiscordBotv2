@@ -1,4 +1,3 @@
-import pokepy
 import pokebase as pb
 import discord
 import asyncio

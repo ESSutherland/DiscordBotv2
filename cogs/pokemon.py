@@ -9,6 +9,8 @@ from pokebase import cache
 
 description = 'Allow users to get information on a specified pokemon'
 
+messages = []
+
 class PokemonModule(commands.Cog):
 
     def __init__(self, client):
@@ -18,6 +20,13 @@ class PokemonModule(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print('Pokemon Module Loaded.')
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        if await self.client.guilds[0].get_channel(payload.channel_id).fetch_message(payload.message_id) in messages:
+            print(True)
+        else:
+            print(False)
 
     @commands.command(name='pokemon')
     async def pokemon(self, ctx, poke_name_or_id, page=1):
@@ -50,8 +59,7 @@ class PokemonModule(commands.Cog):
                         if x in f.pokemon.name:
                             a = False
                     if a:
-                        pokemon = pb.pokemon(f.pokemon.name)
-                        poke_form = pb.pokemon_form(pokemon.forms[0].name)
+                        poke_form = f.pokemon.forms[0]
                         b = True
                         for y in accepted_forms:
                             if poke_form.name == y.name:
@@ -65,13 +73,12 @@ class PokemonModule(commands.Cog):
                         if x in f2.name:
                             a2 = False
                     if a2:
-                        poke_form2 = pb.pokemon_form(f2.name)
                         b2 = True
                         for y in accepted_forms:
-                            if poke_form2.name == y.name:
+                            if f2.name == y.name:
                                 b2 = False
                         if b2:
-                            accepted_forms.append(poke_form2)
+                            accepted_forms.append(f2)
 
                 form = pb.pokemon_form(accepted_forms[page-1].name)
                 poke = pb.pokemon(form.pokemon.name)
@@ -146,7 +153,8 @@ class PokemonModule(commands.Cog):
                 if len(accepted_forms) > 1:
                     embed.set_footer(text=f'Forms [{page}/{len(accepted_forms)}]')
 
-                await ctx.send(file=image_file, embed=embed)
+                msg = await ctx.send(file=image_file, embed=embed)
+                messages.append(msg)
 
         except:
             await ctx.send(embed=await helpers.embed_helper.create_error_embed(f'Unable to get info on `{poke_name_or_id}`. Please make sure you used the correct name or number.'))

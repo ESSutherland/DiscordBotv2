@@ -420,7 +420,7 @@ async def whois(ctx, mention_user=None):
             role_message += f'{role.mention} '
 
     embed.add_field(
-        name=f'Roles [{len(user.roles)}]',
+        name=f'Roles [{len(user.roles)-1}]',
         value=role_message,
         inline=False
     )

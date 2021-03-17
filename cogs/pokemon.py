@@ -31,7 +31,7 @@ class PokemonModule(commands.Cog):
                 url_list = embed.image.url.split('/')
                 file_name = url_list[len(url_list)-1]
                 file_list = file_name.split('_')
-                footer = f'{embed.footer.text} (Shiny)'
+                footer = f'{embed.footer.text if embed.footer.text != discord.Embed.Empty else ""} (Shiny)'
                 if len(file_list) < 6:
                     file_name = f'{file_name[:-4]}_s.png'
                     embed.set_image(url=f'{img_url}{file_name}')
@@ -47,7 +47,7 @@ class PokemonModule(commands.Cog):
                 url_list = embed.image.url.split('/')
                 file_name = url_list[len(url_list) - 1]
                 file_list = file_name.split('_')
-                footer = embed.footer.text.replace(' (Shiny)', '')
+                footer = embed.footer.text.replace('(Shiny)', ' ')
                 if len(file_list) > 5:
                     file_name = f'{file_name[:-6]}.png'
                     embed.set_image(url=f'{img_url}{file_name}')

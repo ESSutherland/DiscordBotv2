@@ -10,6 +10,7 @@ from pokebase import cache
 description = 'Allow users to get information on a specified pokemon'
 
 messages = []
+img_url = 'https://essutherland.github.io/bot-site/images/'
 
 class PokemonModule(commands.Cog):
 
@@ -23,10 +24,35 @@ class PokemonModule(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        if await self.client.guilds[0].get_channel(payload.channel_id).fetch_message(payload.message_id) in messages:
-            print(True)
-        else:
-            print(False)
+        message = await self.client.guilds[0].get_channel(payload.channel_id).fetch_message(payload.message_id)
+        if message in messages:
+            if payload.emoji.name == '✨' and not payload.member.bot:
+                embed = message.embeds[0]
+                url_list = embed.image.url.split('/')
+                file_name = url_list[len(url_list)-1]
+                file_list = file_name.split('_')
+                footer = f'{embed.footer.text} (Shiny)'
+                if len(file_list) < 6:
+                    file_name = f'{file_name[:-4]}_s.png'
+                    embed.set_image(url=f'{img_url}{file_name}')
+                    embed.set_footer(text=footer)
+                    await message.edit(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload):
+        message = await self.client.guilds[0].get_channel(payload.channel_id).fetch_message(payload.message_id)
+        if message in messages:
+            if payload.emoji.name == '✨':
+                embed = message.embeds[0]
+                url_list = embed.image.url.split('/')
+                file_name = url_list[len(url_list) - 1]
+                file_list = file_name.split('_')
+                footer = embed.footer.text.replace(' (Shiny)', '')
+                if len(file_list) > 5:
+                    file_name = f'{file_name[:-6]}.png'
+                    embed.set_image(url=f'{img_url}{file_name}')
+                    embed.set_footer(text=footer)
+                    await message.edit(embed=embed)
 
     @commands.command(name='pokemon')
     async def pokemon(self, ctx, poke_name_or_id, page=1):
@@ -83,28 +109,28 @@ class PokemonModule(commands.Cog):
                 form = pb.pokemon_form(accepted_forms[page-1].name)
                 poke = pb.pokemon(form.pokemon.name)
 
-                img_path = './images/pokemon/images'
                 file_name = ''
                 image_file = None
                 gender_options = ['mf', 'md', 'fd', 'mo', 'fo', 'uk']
 
                 for i in range(0, len(gender_options)):
-                    try:
-                        file_name = f'{poke_species.id}_{page - 1 if len(accepted_forms) > 1 else 0}_{gender_options[i]}_{"g" if "gmax" in poke.name else "n"}_0.png'
-                        image_string = f'{img_path}/{file_name}'
-                        image_file = discord.File(fp=image_string)
-                        break
-                    except FileNotFoundError:
-                        continue
+                    file_name = f'{poke_species.id}_{page - 1 if len(accepted_forms) > 1 else 0}_{gender_options[i]}_{"g" if "gmax" in poke.name else "n"}_0.png'
+                    image_string = f'{img_url}{file_name}'
 
-                if not image_file:
+                    req = requests.get(image_string)
+                    if req.status_code == 200:
+                        break
+                    else:
+                        file_name = ''
+
+                if len(file_name) == 0:
                     for x in range(0, len(gender_options)):
-                        try:
-                            file_name = f'{poke_species.id}_0_{gender_options[x]}_{"g" if "gmax" in poke.name else "n"}_0.png'
-                            image_string = f'{img_path}/{file_name}'
-                            image_file = discord.File(fp=image_string)
+                        file_name = f'{poke_species.id}_0_{gender_options[x]}_{"g" if "gmax" in poke.name else "n"}_0.png'
+                        image_string = f'{img_url}{file_name}'
+                        req2 = requests.get(image_string)
+                        if req2.status_code == 200:
                             break
-                        except FileNotFoundError:
+                        else:
                             continue
 
                 poke_name = get_english(poke_species.names)
@@ -141,7 +167,7 @@ class PokemonModule(commands.Cog):
                     color=self.client.guilds[0].get_member(self.client.user.id).color,
                     description=get_genus(poke_species.genera)
                 )
-                embed.set_image(url=f'attachment://{file_name}')
+                embed.set_image(url=f'{img_url}{file_name}')
                 embed.add_field(name='Type(s)', value=type_string, inline=True)
                 embed.add_field(name='Abilities', value=ability_string, inline=True)
                 embed.add_field(name='Height/Weight', value=f'{"{:.1f}".format(poke.height*0.1)} m/{"{:.1f}".format(poke.weight*0.1)} kg')
@@ -153,7 +179,8 @@ class PokemonModule(commands.Cog):
                 if len(accepted_forms) > 1:
                     embed.set_footer(text=f'Forms [{page}/{len(accepted_forms)}]')
 
-                msg = await ctx.send(file=image_file, embed=embed)
+                msg = await ctx.send(embed=embed)
+                await msg.add_reaction("✨")
                 messages.append(msg)
 
         except:

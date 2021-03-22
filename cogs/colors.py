@@ -5,7 +5,7 @@ import helpers.embed_helper
 import asyncio
 
 from discord.ext import commands
-from PIL import Image, ImageDraw, ImageColor
+from PIL import Image, ImageColor
 
 connection = sqlite3.connect("./db/config.db")
 db = connection.cursor()
@@ -37,6 +37,7 @@ class Colors(commands.Cog):
     # COMMANDS #
     @commands.command(name='color', aliases=['colour'])
     @helpers.role_helper.is_booster(False)
+    @commands.guild_only()
     async def color_command(self, ctx, input_hex, user_id=None):
         print(f'{ctx.author}({ctx.author.id}) executed Color Command.')
 
@@ -151,9 +152,6 @@ class Colors(commands.Cog):
             )
 
 # FUNCTIONS #
-async def hex_to_rgb(color_hex):
-    return tuple(int(color_hex[i:i + 2], 16) for i in (0, 2, 4))
-
 async def has_color_role(user_id):
     db.execute('SELECT role_id FROM color_users WHERE user_id=?', (user_id,))
     row = db.fetchone()

@@ -14,6 +14,7 @@ class AnimeModule(commands.Cog):
         print('Anime Module Loaded')
 
     @commands.command(name='anime')
+    @commands.guild_only()
     async def anime(self, ctx, *, params):
         print(f'{ctx.author}({ctx.author.id}) executed Anime command.')
         message = await ctx.send(embed=discord.Embed(
@@ -61,6 +62,7 @@ class AnimeModule(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name='manga')
+    @commands.guild_only()
     async def manga(self, ctx, *, params):
         print(f'{ctx.author}({ctx.author.id}) executed Manga command.')
         message = await ctx.send(embed=discord.Embed(

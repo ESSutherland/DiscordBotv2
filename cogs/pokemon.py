@@ -6,6 +6,7 @@ import helpers.embed_helper
 
 from discord.ext import commands
 from pokebase import cache
+from PIL import Image, ImageDraw, ImageColor, ImageFont
 
 description = 'Allow users to get information on a specified pokemon'
 
@@ -23,6 +24,7 @@ class PokemonModule(commands.Cog):
         print('Pokemon Module Loaded.')
 
     @commands.Cog.listener()
+    @commands.guild_only()
     async def on_raw_reaction_add(self, payload):
         message = await self.client.guilds[0].get_channel(payload.channel_id).fetch_message(payload.message_id)
         if message in messages:
@@ -39,6 +41,7 @@ class PokemonModule(commands.Cog):
                     await message.edit(embed=embed)
 
     @commands.Cog.listener()
+    @commands.guild_only()
     async def on_raw_reaction_remove(self, payload):
         message = await self.client.guilds[0].get_channel(payload.channel_id).fetch_message(payload.message_id)
         if message in messages:
@@ -55,6 +58,7 @@ class PokemonModule(commands.Cog):
                     await message.edit(embed=embed)
 
     @commands.command(name='pokemon')
+    @commands.guild_only()
     async def pokemon(self, ctx, poke_name_or_id, page=1):
         print(f'{ctx.author}({ctx.author.id}) executed Pokemon command.')
 

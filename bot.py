@@ -133,6 +133,11 @@ async def on_member_update(before, after):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         return
+    if isinstance(error, commands.NoPrivateMessage):
+        await ctx.send(
+            embed=await helpers.embed_helper.create_error_embed('You cannot run commands in Private Messages.')
+        )
+        return
     if isinstance(error, commands.CheckFailure):
         await ctx.send(
             embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
@@ -172,6 +177,7 @@ async def on_member_ban(guild, user):
 
 # BOT COMMAND #
 @client.command()
+@commands.guild_only()
 async def bot(ctx):
     bot_author = client.get_user(bot_author_id)
     embed = discord.Embed(
@@ -198,6 +204,7 @@ async def bot(ctx):
 # SETROLE COMMAND #
 @client.command()
 @commands.has_permissions(administrator=True)
+@commands.guild_only()
 async def setrole(ctx, role_name, *, text):
 
     print(f'{ctx.author}({ctx.author.id}) executed SetRole command.')
@@ -241,6 +248,7 @@ async def setrole(ctx, role_name, *, text):
 # SETCHANNEL COMMAND #
 @client.command()
 @commands.has_permissions(administrator=True)
+@commands.guild_only()
 async def setchannel(ctx, channel_name, *, text):
 
     print(f'{ctx.author}({ctx.author.id}) executed SetChannel command.')
@@ -284,6 +292,7 @@ async def setchannel(ctx, channel_name, *, text):
 # LOAD COMMAND #
 @client.command()
 @commands.has_permissions(administrator=True)
+@commands.guild_only()
 async def enable(ctx, extension):
     client.load_extension(f'cogs.{extension}')
     await enable_cog(extension)
@@ -312,6 +321,7 @@ async def disable(ctx, extension):
 # RELOAD COMMAND #
 @client.command()
 @commands.has_permissions(administrator=True)
+@commands.guild_only()
 async def reload(ctx, extension):
     client.unload_extension(f'cogs.{extension}')
     client.load_extension(f'cogs.{extension}')
@@ -324,6 +334,7 @@ async def reload(ctx, extension):
     )
 
 @client.command()
+@commands.guild_only()
 async def modules(ctx, page=1):
 
     print(f'{ctx.author}({ctx.author.id}) executed Modules command.')
@@ -370,6 +381,7 @@ async def modules(ctx, page=1):
 
 @client.command()
 @commands.has_permissions(administrator=True)
+@commands.guild_only()
 async def status(ctx, *, message):
     print(f'{ctx.author}({ctx.author.id}) executed Status command.')
     global bot_message
@@ -383,6 +395,7 @@ async def status(ctx, *, message):
     )
 
 @client.command()
+@commands.guild_only()
 async def whois(ctx, mention_user=None):
     print(f'{ctx.author}({ctx.author.id}) executed WhoIs command.')
     if len(ctx.message.mentions) == 0 and mention_user is None:
@@ -450,6 +463,7 @@ async def whois(ctx, mention_user=None):
 
 @client.command()
 @commands.check(helpers.role_helper.is_mod)
+@commands.guild_only()
 async def lookup(ctx, user_id):
     print(f'{ctx.author}({ctx.author.id}) executed Lookup command.')
     try:
@@ -476,6 +490,7 @@ async def lookup(ctx, user_id):
 
 @client.command()
 @commands.check(helpers.role_helper.is_mod)
+@commands.guild_only()
 async def ban(ctx, user_id, *, reason=''):
     print(f'{ctx.author}({ctx.author.id}) executed Ban command.')
     user = None
@@ -502,6 +517,7 @@ async def ban(ctx, user_id, *, reason=''):
             await channel.send(embed=embed)
 
 @client.command()
+@commands.guild_only()
 async def help(ctx):
     print(f'{ctx.author}({ctx.author.id}) executed Help command.')
     url = f'https://essutherland.github.io/bot-site/?prefix={bot_prefix}&bot_name={client.user.name}'

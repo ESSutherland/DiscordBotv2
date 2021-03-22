@@ -25,32 +25,34 @@ class CustomCommands(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         command = message.content.split(' ')[0]
-        if await is_command(command) and not message.author.bot:
+        if not isinstance(message.channel, discord.DMChannel):
+            if await is_command(command) and not message.author.bot:
 
-            print(f'{message.author}({message.author.id}) executed custom command: {command}.')
+                print(f'{message.author}({message.author.id}) executed custom command: {command}.')
 
-            level = await get_level(command)
+                level = await get_level(command)
 
-            if level == '-b':
-                if await helpers.role_helper.is_role_defined('booster'):
-                    if await helpers.role_helper.has_role(message.guild, message.author.id, 'booster') or message.author.guild_permissions.administrator:
-                        await send_response(message.channel, await get_response(command), message.author)
-            elif level == '-s':
-                if await helpers.role_helper.is_role_defined('sub'):
-                    if await helpers.role_helper.has_role(message.guild, message.author.id, 'sub') or message.author.guild_permissions.administrator:
-                        await send_response(message.channel, await get_response(command), message.author)
-            elif level == '-m':
-                if await helpers.role_helper.is_role_defined('mod'):
-                    if await helpers.role_helper.has_role(message.guild, message.author.id, 'mod') or message.author.guild_permissions.administrator:
-                        await send_response(message.channel, await get_response(command), message.author)
-            elif level == '-a':
-                await send_response(message.channel, await get_response(command), message.author)
-            else:
-                if str(message.author.id) == level or message.author.guild_permissions.administrator:
+                if level == '-b':
+                    if await helpers.role_helper.is_role_defined('booster'):
+                        if await helpers.role_helper.has_role(message.guild, message.author.id, 'booster') or message.author.guild_permissions.administrator:
+                            await send_response(message.channel, await get_response(command), message.author)
+                elif level == '-s':
+                    if await helpers.role_helper.is_role_defined('sub'):
+                        if await helpers.role_helper.has_role(message.guild, message.author.id, 'sub') or message.author.guild_permissions.administrator:
+                            await send_response(message.channel, await get_response(command), message.author)
+                elif level == '-m':
+                    if await helpers.role_helper.is_role_defined('mod'):
+                        if await helpers.role_helper.has_role(message.guild, message.author.id, 'mod') or message.author.guild_permissions.administrator:
+                            await send_response(message.channel, await get_response(command), message.author)
+                elif level == '-a':
                     await send_response(message.channel, await get_response(command), message.author)
+                else:
+                    if str(message.author.id) == level or message.author.guild_permissions.administrator:
+                        await send_response(message.channel, await get_response(command), message.author)
 
     @commands.command(name='command')
     @commands.check(helpers.role_helper.is_mod)
+    @commands.guild_only()
     async def custom_command(self, ctx, command_name, level, *, response):
 
         print(f'{ctx.author}({ctx.author.id}) executed Command command.')
@@ -87,6 +89,7 @@ class CustomCommands(commands.Cog):
 
     @commands.command(name='delete')
     @commands.check(helpers.role_helper.is_mod)
+    @commands.guild_only()
     async def delete(self, ctx, command_name):
 
         print(f'{ctx.author}({ctx.author.id}) executed Delete command.')
@@ -107,6 +110,7 @@ class CustomCommands(commands.Cog):
             )
 
     @commands.command(name='commands')
+    @commands.guild_only()
     async def custom_commands(self, ctx, page=1):
 
         print(f'{ctx.author}({ctx.author.id}) executed Commands command.')

@@ -37,6 +37,7 @@ class Minecraft(commands.Cog):
     # COMMANDS #
     @commands.command(name="whitelist")
     @commands.check(helpers.role_helper.is_sub)
+    @commands.guild_only()
     async def whitelist(self, ctx, username):
 
         print(f'{ctx.author}({ctx.author.id}) executed Whitelist command.')
@@ -84,6 +85,7 @@ class Minecraft(commands.Cog):
 
     @commands.command(name='setrcon')
     @commands.has_permissions(administrator=True)
+    @commands.guild_only()
     async def set_rcon(self, ctx, rcon_ip, rcon_port, rcon_password):
 
         print(f'{ctx.author}({ctx.author.id}) executed SetRCON command.')

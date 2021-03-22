@@ -39,35 +39,37 @@ class Levels(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        msg_exp = 1
-        author_id = message.author.id
-        if not message.author.bot:
-            if not message.content.startswith(bot_prefix) and not await is_command(message.content):
-                multiplier = await get_multiplier(message)
+        if not isinstance(message.channel, discord.DMChannel):
+            msg_exp = 1
+            author_id = message.author.id
+            if not message.author.bot:
+                if not message.content.startswith(bot_prefix) and not await is_command(message.content):
+                    multiplier = await get_multiplier(message)
 
-                if not await has_level(message.author.id):
-                    db.execute('INSERT INTO levels(user_id) VALUES(?)', (author_id,))
-                    connection.commit()
+                    if not await has_level(message.author.id):
+                        db.execute('INSERT INTO levels(user_id) VALUES(?)', (author_id,))
+                        connection.commit()
 
-                user_exp = await get_exp(author_id)
-                user_level = await get_level(author_id)
+                    user_exp = await get_exp(author_id)
+                    user_level = await get_level(author_id)
 
-                if (user_exp + (msg_exp * multiplier)) >= level_exp:
-                    await set_level(author_id, (user_level + 1))
-                    await set_exp(author_id, (user_exp + (msg_exp * multiplier)) - level_exp)
+                    if (user_exp + (msg_exp * multiplier)) >= level_exp:
+                        await set_level(author_id, (user_level + 1))
+                        await set_exp(author_id, (user_exp + (msg_exp * multiplier)) - level_exp)
 
-                    if await helpers.channel_helper.is_channel_defined('bot'):
-                        await message.guild.get_channel(await helpers.channel_helper.get_channel_id('bot')).send(
-                            embed=await helpers.embed_helper.create_level_embed(
-                                message.author,
-                                await get_level(author_id),
-                                self.client.guilds[0].get_member(self.client.user.id).color
+                        if await helpers.channel_helper.is_channel_defined('bot'):
+                            await message.guild.get_channel(await helpers.channel_helper.get_channel_id('bot')).send(
+                                embed=await helpers.embed_helper.create_level_embed(
+                                    message.author,
+                                    await get_level(author_id),
+                                    self.client.guilds[0].get_member(self.client.user.id).color
+                                )
                             )
-                        )
-                else:
-                    await set_exp(author_id, user_exp + (msg_exp * multiplier))
+                    else:
+                        await set_exp(author_id, user_exp + (msg_exp * multiplier))
 
     @commands.command(name='level')
+    @commands.guild_only()
     async def level(self, ctx):
 
         print(f'{ctx.author}({ctx.author.id}) executed Level command.')
@@ -100,6 +102,7 @@ class Levels(commands.Cog):
         )
 
     @commands.command(name='leveltop')
+    @commands.guild_only()
     async def level_top(self, ctx):
 
         print(f'{ctx.author}({ctx.author.id}) executed LevelTop command.')
@@ -150,6 +153,7 @@ class Levels(commands.Cog):
 
     @commands.command(name='setexp')
     @commands.has_permissions(administrator=True)
+    @commands.guild_only()
     async def set_exp(self, ctx, exp):
 
         print(f'{ctx.author}({ctx.author.id}) executed SetExp command.')
@@ -161,6 +165,7 @@ class Levels(commands.Cog):
             cfg_file.close()
 
     @commands.command(name='user')
+    @commands.guild_only()
     async def user(self, ctx, user=None):
 
         print(f'{ctx.author}({ctx.author.id}) executed User command.')

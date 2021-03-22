@@ -42,6 +42,7 @@ class BoostMessage(commands.Cog):
 
     @commands.command(name='boostmessage')
     @commands.has_permissions(administrator=True)
+    @commands.guild_only()
     async def boost_message(self, ctx, *, message):
         print(f'{ctx.author}({ctx.author.id}) executed BoostMessage command.')
         cfg_file = open('config.ini', 'w')

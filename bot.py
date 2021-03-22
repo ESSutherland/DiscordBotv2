@@ -77,8 +77,7 @@ async def on_member_remove(member):
 
     leave_message = f'{member} has left the server.' if not member.pending else f'{member} has left the server. (Member was still pending.)'
 
-    if await helpers.channel_helper.is_channel_defined('admin'):
-
+    if await helpers.channel_helper.is_channel_defined('admin') and client.guilds[0].id == 462530786667659265:
         await client.guilds[0].get_channel(
             await helpers.channel_helper.get_channel_id('admin')
         ).send(leave_message)
@@ -144,8 +143,8 @@ async def on_command_error(ctx, error):
 @client.event
 async def on_member_ban(guild, user):
     ban_list = await guild.bans()
-    if await helpers.channel_helper.is_channel_defined('admin'):
-        channel = client.guilds[0].get_channel(await helpers.channel_helper.get_channel_id('admin'))
+    if await helpers.channel_helper.is_channel_defined('mod'):
+        channel = client.guilds[0].get_channel(await helpers.channel_helper.get_channel_id('mod'))
         ban_giver = ''
 
         await asyncio.sleep(2)
@@ -156,7 +155,7 @@ async def on_member_ban(guild, user):
         embed = discord.Embed(
             title='User Banned!',
             color=await get_bot_color(),
-            description=f'{ban_giver.mention} banned {user.mention}.'
+            description=f'{ban_giver.mention} banned {user}.'
         )
         embed.set_author(name=str(user), icon_url=user.avatar_url)
 
@@ -165,9 +164,9 @@ async def on_member_ban(guild, user):
                 if ban.reason is not None:
                     embed.add_field(name='Reason', value=ban.reason, inline=False)
 
-        embed.set_footer(text=f'ID: {user.id}')
-
-        await channel.send(embed=embed)
+        embed.set_footer(text=f'Discord ID: {user.id}')
+        if not ban_giver.bot:
+            await channel.send(embed=embed)
 
 # COMMANDS #
 
@@ -474,6 +473,33 @@ async def lookup(ctx, user_id):
         )
     except:
         print('ERROR')
+
+@client.command()
+@commands.check(helpers.role_helper.is_mod)
+async def ban(ctx, user_id, *, reason=''):
+    print(f'{ctx.author}({ctx.author.id}) executed Ban command.')
+    user = None
+    try:
+        user = await client.fetch_user(user_id)
+    except:
+        if len(ctx.message.mentions) > 0:
+            user = ctx.message.mentions[0]
+
+    if user:
+        ban_reason = f'{ctx.author.name}: {reason}'
+        await ctx.guild.ban(user=user, delete_message_days=0, reason=ban_reason)
+        embed = discord.Embed(
+            title='User Banned!',
+            color=await get_bot_color(),
+            description=f'{ctx.author.mention} banned {user}.'
+        )
+        embed.set_author(name=str(user), icon_url=user.avatar_url)
+        if len(reason) > 0:
+            embed.add_field(name='Reason', value=reason, inline=False)
+        embed.set_footer(text=f'Discord ID: {user.id}')
+        if await helpers.channel_helper.is_channel_defined('mod'):
+            channel = ctx.guild.get_channel(await helpers.channel_helper.get_channel_id('mod'))
+            await channel.send(embed=embed)
 
 @client.command()
 async def help(ctx):

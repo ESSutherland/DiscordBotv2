@@ -1,12 +1,10 @@
 import pokebase as pb
 import discord
-import asyncio
 import requests
 import helpers.embed_helper
 
 from discord.ext import commands
 from pokebase import cache
-from PIL import Image, ImageDraw, ImageColor, ImageFont
 
 description = 'Allow users to get information on a specified pokemon'
 

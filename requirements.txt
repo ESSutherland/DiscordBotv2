@@ -5,3 +5,4 @@ Pillow~=8.1.0
 mal-api
 emoji~=1.2.0
 requests~=2.25.1
+pokebase

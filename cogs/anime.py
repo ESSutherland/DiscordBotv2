@@ -1,6 +1,6 @@
 import discord
 
-from mal import Anime, Manga, config, AnimeSearch, MangaSearch
+from mal import Anime, Manga, AnimeSearch, MangaSearch
 from discord.ext import commands
 
 description = 'Allows users to search and display data on Anime and Manga via MyAnimeList.'

@@ -4,7 +4,7 @@ import requests
 import helpers.embed_helper
 
 from discord.ext import commands
-from PIL import Image, ImageDraw, ImageColor, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 
 connection = sqlite3.connect('./db/config.db')
 db = connection.cursor()

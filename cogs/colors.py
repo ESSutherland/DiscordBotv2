@@ -3,6 +3,7 @@ import sqlite3
 import helpers.role_helper
 import helpers.embed_helper
 import asyncio
+import nest_asyncio
 
 from discord.ext import commands
 from PIL import Image, ImageColor
@@ -90,15 +91,12 @@ class Colors(commands.Cog):
                     name=author.name, color=role_color
                 )
 
-                await asyncio.sleep(1)
-
-                mod_role = ctx.guild.get_role(int(mod_role_id))
                 await ctx.guild.get_member(author_id).add_roles(role)
 
-                if mod_role in author.roles:
-                    await ctx.guild.edit_role_positions(positions={role: mod_role.position})
+                if await helpers.role_helper.has_role(ctx.guild, author_id, 'mod'):
+                    await ctx.guild.edit_role_positions(positions={role: ctx.guild.get_role(int(mod_role_id)).position})
                 else:
-                    await ctx.guild.edit_role_positions(positions={role: mod_role.position - 1})
+                    await ctx.guild.edit_role_positions(positions={role: ctx.guild.get_role(int(mod_role_id)).position - 1})
 
                 await add_color_role(author_id, role.id)
 

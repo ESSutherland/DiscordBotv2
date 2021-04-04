@@ -3,7 +3,6 @@ import sqlite3
 import helpers.role_helper
 import helpers.embed_helper
 import asyncio
-import nest_asyncio
 
 from discord.ext import commands
 from PIL import Image, ImageColor

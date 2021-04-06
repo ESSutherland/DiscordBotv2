@@ -1,5 +1,4 @@
 import sqlite3
-import discord
 
 from discord.ext import commands
 
@@ -36,16 +35,6 @@ async def has_role(guild, user_id,  role_name):
             return True
     return False
 
-async def is_mod(ctx, admin=True):
-    if await is_role_defined('mod'):
-        if await has_role(ctx.guild, ctx.author.id, 'mod') or \
-                (ctx.author.guild_permissions.administrator and admin):
-            return True
-        else:
-            return False
-    else:
-        return False
-
 def is_booster(admin=True):
     async def predicate(ctx):
         if await is_role_defined('booster'):
@@ -58,14 +47,26 @@ def is_booster(admin=True):
             return False
     return commands.check(predicate)
 
-
-async def is_sub(ctx, admin=True):
-    if await is_role_defined('sub'):
-        if (await has_role(ctx.guild, ctx.author.id, 'sub') or
-                (ctx.author.guild_permissions.administrator and admin)
-        ):
-            return True
+def is_mod(admin=True):
+    async def predicate(ctx):
+        if await is_role_defined('mod'):
+            if (await has_role(ctx.guild, ctx.author.id, 'mod') or
+                    (ctx.author.guild_permissions.administrator and admin)):
+                return True
+            else:
+                return False
         else:
             return False
-    else:
-        return False
+    return commands.check(predicate)
+
+def is_sub(admin=True):
+    async def predicate(ctx):
+        if await is_role_defined('sub'):
+            if (await has_role(ctx.guild, ctx.author.id, 'sub') or
+                    (ctx.author.guild_permissions.administrator and admin)):
+                return True
+            else:
+                return False
+        else:
+            return False
+    return commands.check(predicate)

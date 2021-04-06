@@ -43,7 +43,7 @@ class Levels(commands.Cog):
             msg_exp = 1
             author_id = message.author.id
             if not message.author.bot:
-                if not message.content.startswith(bot_prefix) and not await is_command(message.content):
+                if not message.content.startswith(bot_prefix) and not await is_command(message.content.split(' ')[0]):
                     multiplier = await get_multiplier(message)
 
                     if not await has_level(message.author.id):

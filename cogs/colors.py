@@ -2,7 +2,6 @@ import discord
 import sqlite3
 import helpers.role_helper
 import helpers.embed_helper
-import asyncio
 
 from discord.ext import commands
 from PIL import Image, ImageColor
@@ -36,7 +35,7 @@ class Colors(commands.Cog):
 
     # COMMANDS #
     @commands.command(name='color', aliases=['colour'])
-    @helpers.role_helper.is_booster(False)
+    @helpers.role_helper.is_booster(admin=False)
     @commands.guild_only()
     async def color_command(self, ctx, input_hex, user_id=None):
         print(f'{ctx.author}({ctx.author.id}) executed Color Command.')

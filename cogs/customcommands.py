@@ -51,7 +51,7 @@ class CustomCommands(commands.Cog):
                         await send_response(message.channel, await get_response(command), message.author)
 
     @commands.command(name='command')
-    @commands.check(helpers.role_helper.is_mod)
+    @helpers.role_helper.is_mod()
     @commands.guild_only()
     async def custom_command(self, ctx, command_name, level, *, response):
 
@@ -88,7 +88,7 @@ class CustomCommands(commands.Cog):
                 )
 
     @commands.command(name='delete')
-    @commands.check(helpers.role_helper.is_mod)
+    @helpers.role_helper.is_mod()
     @commands.guild_only()
     async def delete(self, ctx, command_name):
 

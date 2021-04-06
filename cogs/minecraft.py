@@ -36,7 +36,7 @@ class Minecraft(commands.Cog):
 
     # COMMANDS #
     @commands.command(name="whitelist")
-    @commands.check(helpers.role_helper.is_sub)
+    @helpers.role_helper.is_sub()
     @commands.guild_only()
     async def whitelist(self, ctx, username):
 

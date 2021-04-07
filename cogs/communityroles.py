@@ -28,6 +28,11 @@ class CommunityRoles(commands.Cog):
                 if str(message.id) == get_message('game'):
                     role = self.client.guilds[0].get_role(await helpers.role_helper.get_role_id('game'))
                     await payload.member.add_roles(role)
+        if is_message_set('movie') and await helpers.role_helper.is_role_defined('movie'):
+            if payload.emoji.name == "🎥" and not payload.member.bot:
+                if str(message.id) == get_message('movie'):
+                    role = self.client.guilds[0].get_role(await helpers.role_helper.get_role_id('movie'))
+                    await payload.member.add_roles(role)
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
@@ -38,20 +43,39 @@ class CommunityRoles(commands.Cog):
                 if str(message.id) == get_message('game'):
                     role = self.client.guilds[0].get_role(await helpers.role_helper.get_role_id('game'))
                     await member.remove_roles(role)
+        if is_message_set('movie') and await helpers.role_helper.is_role_defined('movie'):
+            if payload.emoji.name == "🎥" and not member.bot:
+                if str(message.id) == get_message('movie'):
+                    role = self.client.guilds[0].get_role(await helpers.role_helper.get_role_id('movie'))
+                    await member.remove_roles(role)
 
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def game(self, ctx):
+        await ctx.message.delete()
         if await helpers.role_helper.is_role_defined('game'):
-            message = await ctx.send('GAME MESSAGE')
+            role = self.client.guilds[0].get_role(await helpers.role_helper.get_role_id('game'))
+            embed = discord.Embed(
+                title='Community Games!',
+                description=f'React to this message with 🎮 to receive the {role.mention} role and be notified about Community Gaming related messages! Remove your reaction at any time to remove the role from yourself.',
+                color=self.client.guilds[0].get_member(self.client.user.id).color
+            )
+            message = await ctx.send(embed=embed)
             set_message('game', message.id)
             await message.add_reaction("🎮")
 
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def movie(self, ctx):
+        await ctx.message.delete()
         if await helpers.role_helper.is_role_defined('movie'):
-            message = await ctx.send('MOVIE MESSAGE')
+            role = self.client.guilds[0].get_role(await helpers.role_helper.get_role_id('movie'))
+            embed = discord.Embed(
+                title='Community Movie Nights!',
+                description=f'React to this message with 🎥 to receive the {role.mention} role and be notified about Community Movie Night related messages! Remove your reaction at any time to remove the role from yourself.',
+                color=self.client.guilds[0].get_member(self.client.user.id).color
+            )
+            message = await ctx.send(embed=embed)
             set_message('movie', message.id)
             await message.add_reaction("🎥")
 

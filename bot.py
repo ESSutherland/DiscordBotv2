@@ -59,8 +59,16 @@ async def on_ready():
 # JOIN EVENT #
 @client.event
 async def on_member_join(member):
-    await asyncio.sleep(1)
+    await asyncio.sleep(3)
+
     message = f'{member} has joined the server.' if not member.pending else f'{member} has joined the server. Awaiting Screening.'
+
+    if member.pending is False:
+        await client.guilds[0].get_member(member.id).add_roles(
+            client.guilds[0].get_role(
+                await helpers.role_helper.get_role_id('user')
+            )
+        )
 
     print(message)
 

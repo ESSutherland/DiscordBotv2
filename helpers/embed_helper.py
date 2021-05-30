@@ -33,11 +33,19 @@ async def create_color_success_embed(color_hex, color, user):
     return embed
 
 async def create_level_embed(user, level, color):
-    embed = discord.Embed(
-        title='Level Up!',
-        color=color,
-        description=f'Congratulations, {user.mention} for reaching level {level}!'
-    )
+
+    if int(level) == 1000:
+        embed = discord.Embed(
+            title='Level Up!',
+            color=color,
+            description=f'Congratulations, {user.mention} for reaching level {level}! What is wrong with you???'
+        )
+    else:
+        embed = discord.Embed(
+            title='Level Up!',
+            color=color,
+            description=f'Congratulations, {user.mention} for reaching level {level}!'
+        )
     return embed
 
 async def add_blank_field(embed, inline):

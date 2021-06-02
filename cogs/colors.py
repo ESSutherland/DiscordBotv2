@@ -29,7 +29,8 @@ class Colors(commands.Cog):
                     int(user[0]),
                     'booster'
                 ):
-                    await delete_color_role(self.client.guilds[0], int(user[0]))
+                    print(self.client.guilds[0], " GUILD")
+                    await delete_color_role(self.client.guilds[0], user[0])
 
         print('Colors Module Loaded.')
 
@@ -167,10 +168,10 @@ async def add_color_role(user_id, role_id):
 
 async def delete_color_role(guild, user_id):
     color_role_id = await get_color_role(user_id)
-    role = await guild.get_role(int(color_role_id))
+    role = guild.get_role(int(color_role_id))
     print(role)
     if role is not None:
-        role.delete()
+        await role.delete()
     db.execute('DELETE FROM color_users WHERE user_id=?', (user_id,))
     connection.commit()
 

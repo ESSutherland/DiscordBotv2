@@ -167,7 +167,10 @@ async def add_color_role(user_id, role_id):
 
 async def delete_color_role(guild, user_id):
     color_role_id = await get_color_role(user_id)
-    await guild.get_role(int(color_role_id)).delete()
+    role = await guild.get_role(int(color_role_id))
+    print(role)
+    if role is not None:
+        role.delete()
     db.execute('DELETE FROM color_users WHERE user_id=?', (user_id,))
     connection.commit()
 

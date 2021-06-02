@@ -29,7 +29,7 @@ class Colors(commands.Cog):
                     int(user[0]),
                     'booster'
                 ):
-                    await delete_color_role(self.client.guilds[0], user[0].id)
+                    await delete_color_role(self.client.guilds[0], int(user[0]))
 
         print('Colors Module Loaded.')
 

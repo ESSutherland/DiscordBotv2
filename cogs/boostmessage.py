@@ -1,5 +1,6 @@
 import discord
 import helpers.channel_helper
+import helpers.embed_helper
 
 from discord.ext import commands
 from configparser import ConfigParser
@@ -49,6 +50,10 @@ class BoostMessage(commands.Cog):
         cfg.set('Bot', 'boost_message', message)
         cfg.write(cfg_file)
         cfg_file.close()
+
+        await ctx.channel.send(
+            embed=await helpers.embed_helper.create_success_embed('Boost Message Updated.', self.client.guilds[0].get_member(self.client.user.id).color)
+        )
 
 
 def setup(client):

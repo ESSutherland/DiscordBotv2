@@ -12,6 +12,7 @@ boost_message = cfg.get('Bot', 'boost_message')
 
 description = 'Have the bot send a thank you message in the general channel when someone boosts the server.'
 
+
 class BoostMessage(commands.Cog):
 
     def __init__(self, client):
@@ -52,7 +53,9 @@ class BoostMessage(commands.Cog):
         cfg_file.close()
 
         await ctx.channel.send(
-            embed=await helpers.embed_helper.create_success_embed('Boost Message Updated.', self.client.guilds[0].get_member(self.client.user.id).color)
+            embed=await helpers.embed_helper.create_success_embed('Boost Message Updated.',
+                                                                  self.client.guilds[0].get_member(
+                                                                      self.client.user.id).color)
         )
 
 

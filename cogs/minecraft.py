@@ -30,7 +30,10 @@ class Minecraft(commands.Cog):
                     int(user[0]),
                     'sub'
                 ):
-                    await whitelist_remove_user(user[0])
+                    try:
+                        await whitelist_remove_user(user[0])
+                    except:
+                        print('MINECRAFT SERVER OFFLINE')
 
         print('Minecraft Module Loaded.')
 

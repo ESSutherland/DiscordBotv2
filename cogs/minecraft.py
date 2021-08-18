@@ -52,19 +52,21 @@ class Minecraft(commands.Cog):
         if auth_server_status == 'green':
             if await is_rcon_enabled():
                 if await helpers.role_helper.is_role_defined('sub'):
+                    player = None
                     try:
                         player = Player(username=username)
+                    except:
+                        await ctx.send(
+                            embed=await helpers.embed_helper.create_error_embed(
+                                f'`{username}` is not a valid Minecraft account.'
+                            )
+                        )
+                    else:
                         await whitelist_add_user(ctx.author.id, username)
                         await ctx.send(
                             embed=await helpers.embed_helper.create_success_embed(
                                 f'Set whitelist for {ctx.author.mention}: `{player.username}`',
                                 self.client.guilds[0].get_member(self.client.user.id).color
-                            )
-                        )
-                    except:
-                        await ctx.send(
-                            embed=await helpers.embed_helper.create_error_embed(
-                                f'`{username}` is not a valid Minecraft account.'
                             )
                         )
                 else:

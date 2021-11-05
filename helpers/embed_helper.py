@@ -40,6 +40,12 @@ async def create_level_embed(user, level, color):
             color=color,
             description=f'Congratulations, {user.mention} for reaching level {level}! What is wrong with you???'
         )
+    elif int(level) == 69:
+        embed = discord.Embed(
+            title='Level Up!',
+            color=color,
+            description=f'Congratulations, {user.mention} for reaching level {level}! Nice.'
+        )
     else:
         embed = discord.Embed(
             title='Level Up!',

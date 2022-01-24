@@ -32,6 +32,9 @@ client.remove_command('help')
 connection = sqlite3.connect("./db/config.db")
 db = connection.cursor()
 
+guild_list = []
+for guild in client.guilds:
+    guild_list.append(guild.id)
 # EVENTS #
 
 # READY EVENT #
@@ -180,8 +183,8 @@ async def on_member_ban(guild, user):
             await channel.send(embed=embed)
 
 # COMMANDS #
-
 # BOT COMMAND #
+
 @client.command()
 @commands.guild_only()
 async def bot(ctx):
@@ -211,7 +214,7 @@ async def bot(ctx):
 @client.command()
 @commands.has_permissions(administrator=True)
 @commands.guild_only()
-async def setrole(ctx, role_name, *, text):
+async def setrole(ctx, role_name, *, role):
 
     print(f'{ctx.author}({ctx.author.id}) executed SetRole command.')
 
@@ -468,7 +471,7 @@ async def whois(ctx, mention_user=None):
     )
 
 @client.command()
-@commands.check(helpers.role_helper.is_mod)
+@helpers.role_helper.is_mod()
 @commands.guild_only()
 async def lookup(ctx, user_id):
     print(f'{ctx.author}({ctx.author.id}) executed Lookup command.')
@@ -495,7 +498,7 @@ async def lookup(ctx, user_id):
         print('ERROR')
 
 @client.command()
-@commands.check(helpers.role_helper.is_mod)
+@helpers.role_helper.is_mod()
 @commands.guild_only()
 async def ban(ctx, user_id, *, reason=''):
     print(f'{ctx.author}({ctx.author.id}) executed Ban command.')

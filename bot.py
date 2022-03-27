@@ -104,6 +104,8 @@ async def on_member_remove(member):
 @client.event
 async def on_member_update(before, after):
 
+    current_guild = client.guilds[0]
+
     before_roles = before.roles
     before_roles.reverse()
     after_roles = after.roles
@@ -114,26 +116,44 @@ async def on_member_update(before, after):
         new_role = next(role for role in after_roles if role not in before_roles)
         print(f'{before}({before.id}) has gained role: {new_role}({new_role.id})')
 
+        if await helpers.role_helper.is_role_defined('mod'):
+            if new_role == current_guild.get_role(int(await helpers.role_helper.get_role_id('mod'))):
+                if await helpers.role_helper.is_role_defined('booster'):
+                    if await cogs.colors.has_color_role(before.id):
+                        role = current_guild.get_role(int(await cogs.colors.get_color_role(before.id)))
+                        print('Moving Role')
+                        await current_guild.edit_role_positions(
+                             positions={role: current_guild.get_role(int(await helpers.role_helper.get_role_id('mod'))).position + 1})
+
     # LOSE ROLE #
     if len(before.roles) > len(after.roles):
         lost_role = next(role for role in before_roles if role not in after_roles)
         print(f'{before}({before.id}) has lost role: {lost_role}({lost_role.id})')
 
         if await helpers.role_helper.is_role_defined('booster'):
-            if lost_role == client.guilds[0].get_role(int(await helpers.role_helper.get_role_id('booster'))):
+            if lost_role == current_guild.get_role(int(await helpers.role_helper.get_role_id('booster'))):
                 if await cogs.colors.has_color_role(before.id):
                     await cogs.colors.delete_color_role(client.guilds[0], before.id)
 
         if await helpers.role_helper.is_role_defined('sub'):
-            if lost_role == client.guilds[0].get_role(int(await helpers.role_helper.get_role_id('sub'))):
+            if lost_role == current_guild.get_role(int(await helpers.role_helper.get_role_id('sub'))):
                 if await cogs.minecraft.has_whitelist(before.id):
                     await cogs.minecraft.whitelist_remove_user(before.id)
 
+        if await helpers.role_helper.is_role_defined('mod'):
+            if lost_role == current_guild.get_role(int(await helpers.role_helper.get_role_id('mod'))):
+                if await helpers.role_helper.is_role_defined('booster'):
+                    if await cogs.colors.has_color_role(before.id):
+                        role = current_guild.get_role(int(await cogs.colors.get_color_role(before.id)))
+                        print('Moving Role')
+                        await current_guild.edit_role_positions(
+                             positions={role: current_guild.get_role(int(await helpers.role_helper.get_role_id('mod'))).position})
+
     if await helpers.role_helper.is_role_defined('user'):
-        if after.pending is False and not await helpers.role_helper.has_role(client.guilds[0], before.id, 'user'):
+        if after.pending is False and not await helpers.role_helper.has_role(current_guild, before.id, 'user'):
             print(f'{after}({after.id}) has agreed to the rules.')
-            await client.guilds[0].get_member(after.id).add_roles(
-                client.guilds[0].get_role(
+            await current_guild.get_member(after.id).add_roles(
+                current_guild.get_role(
                     await helpers.role_helper.get_role_id('user')
                 )
             )
@@ -155,15 +175,15 @@ async def on_command_error(ctx, error):
     raise error
 
 @client.event
-async def on_member_ban(guild, user):
-    ban_list = await guild.bans()
+async def on_member_ban(_guild, user):
+    ban_list = await _guild.bans()
     if await helpers.channel_helper.is_channel_defined('mod'):
         channel = client.guilds[0].get_channel(await helpers.channel_helper.get_channel_id('mod'))
         ban_giver = ''
 
         await asyncio.sleep(2)
 
-        async for log in guild.audit_logs(limit=1, action=discord.AuditLogAction.ban, after=(datetime.datetime.now() - datetime.timedelta(seconds=5))):
+        async for log in _guild.audit_logs(limit=1, action=discord.AuditLogAction.ban, after=(datetime.datetime.now() - datetime.timedelta(seconds=5))):
             ban_giver = log.user
 
         embed = discord.Embed(
@@ -173,10 +193,10 @@ async def on_member_ban(guild, user):
         )
         embed.set_author(name=str(user), icon_url=user.avatar_url)
 
-        for ban in ban_list:
-            if ban.user.id == user.id:
-                if ban.reason is not None:
-                    embed.add_field(name='Reason', value=ban.reason, inline=False)
+        for _ban in ban_list:
+            if _ban.user.id == user.id:
+                if _ban.reason is not None:
+                    embed.add_field(name='Reason', value=_ban.reason, inline=False)
 
         embed.set_footer(text=f'Discord ID: {user.id}')
         if not ban_giver.bot:

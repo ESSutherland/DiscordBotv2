@@ -42,6 +42,7 @@ for guild in client.guilds:
 async def on_ready():
     db.execute('CREATE TABLE IF NOT EXISTS roles(role_name text unique, role_id integer)')
     db.execute('CREATE TABLE IF NOT EXISTS channels(channel_name text unique, channel_id integer)')
+    db.execute('CREATE TABLE IF NOT EXISTS banned_names(username text unique)')
     connection.commit()
     await client.change_presence(
         activity=discord.Game(name=f'{bot_message} | {bot_prefix}help')
@@ -62,7 +63,16 @@ async def on_ready():
 # JOIN EVENT #
 @client.event
 async def on_member_join(member):
+
+    db.execute('SELECT username FROM banned_names')
+    data = db.fetchall()
+
     message = f'{member} has joined the server.' if not member.pending else f'{member} has joined the server. Awaiting Screening.'
+
+    for n in data[0]:
+        if member.name == n:
+            await client.guilds[0].ban(user=client.get_user(member.id), delete_message_days=1, reason='Spam Bot Auto Ban')
+            break
 
     if member.pending is False:
         await client.guilds[0].get_member(member.id).add_roles(
@@ -70,7 +80,6 @@ async def on_member_join(member):
                 await helpers.role_helper.get_role_id('user')
             )
         )
-
     print(message)
 
 # LEAVE EVENT #
@@ -544,6 +553,56 @@ async def ban(ctx, user_id, *, reason=''):
         if await helpers.channel_helper.is_channel_defined('mod'):
             channel = ctx.guild.get_channel(await helpers.channel_helper.get_channel_id('mod'))
             await channel.send(embed=embed)
+
+@client.command()
+@helpers.role_helper.is_mod()
+@commands.guild_only()
+async def massban(ctx, username, *, reason=''):
+    print(f'{ctx.author}({ctx.author.id}) executed Mass Ban command.')
+    members = await ctx.guild.query_members(query=f'{username}')
+    ban_reason = f'{ctx.author.name}: {reason}'
+
+    for m in members:
+        user = client.get_user(m.id)
+        await ctx.guild.ban(user=user, delete_message_days=1, reason=ban_reason)
+        embed = discord.Embed(
+            title='User Banned!',
+            color=await get_bot_color(),
+            description=f'{ctx.author.mention} banned {user}.'
+        )
+        embed.set_author(name=str(user), icon_url=user.avatar_url)
+        if len(reason) > 0:
+            embed.add_field(name='Reason', value=reason, inline=False)
+        embed.set_footer(text=f'Discord ID: {user.id}')
+        if await helpers.channel_helper.is_channel_defined('mod'):
+            channel = ctx.guild.get_channel(await helpers.channel_helper.get_channel_id('mod'))
+            await channel.send(embed=embed)
+
+@client.command()
+@helpers.role_helper.is_mod()
+@commands.guild_only()
+async def autoban(ctx, username):
+    print(f'{ctx.author}({ctx.author.id}) executed Auto Ban command.')
+    db.execute('INSERT INTO banned_names VALUES (?)', (username,))
+    connection.commit()
+    embed = await helpers.embed_helper.create_success_embed(
+        f'`{username}` Added To Auto-Ban List.',
+        await get_bot_color()
+    )
+    await ctx.channel.send(embed=embed)
+
+@client.command()
+@helpers.role_helper.is_mod()
+@commands.guild_only()
+async def unautoban(ctx, username):
+    print(f'{ctx.author}({ctx.author.id}) executed Un-Auto Ban Name command.')
+    db.execute('DELETE FROM banned_names WHERE username=?', (username,))
+    connection.commit()
+    embed = await helpers.embed_helper.create_success_embed(
+        f'`{username}` Removed From Auto-Ban List.',
+        await get_bot_color()
+    )
+    await ctx.channel.send(embed=embed)
 
 @client.command()
 @commands.guild_only()

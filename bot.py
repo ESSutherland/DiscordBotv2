@@ -9,10 +9,12 @@ import cogs.minecraft
 import math
 import asyncio
 import datetime
+import time
 
 from configparser import ConfigParser
 from discord.ext import commands
 from importlib import import_module
+from discord.ui import Button, View
 
 # CONFIG INFO #
 cfg = ConfigParser()
@@ -24,17 +26,14 @@ bot_prefix = cfg.get('Bot', 'command_prefix')
 bot_message = cfg.get('Bot', 'status_message')
 bot_author_id = 106882411781947392
 intents = discord.Intents.all()
-client = commands.Bot(command_prefix=bot_prefix, intents=intents)
 
+client = commands.Bot(command_prefix=bot_prefix,intents=intents)
 client.remove_command('help')
 
 # DB INFO #
 connection = sqlite3.connect("./db/config.db")
 db = connection.cursor()
 
-guild_list = []
-for guild in client.guilds:
-    guild_list.append(guild.id)
 # EVENTS #
 
 # READY EVENT #
@@ -63,7 +62,6 @@ async def on_ready():
 # JOIN EVENT #
 @client.event
 async def on_member_join(member):
-
     db.execute('SELECT username FROM banned_names')
     data = db.fetchall()
 
@@ -71,7 +69,8 @@ async def on_member_join(member):
 
     for n in data[0]:
         if member.name == n:
-            await client.guilds[0].ban(user=client.get_user(member.id), delete_message_days=1, reason='Spam Bot Auto Ban')
+            await client.guilds[0].ban(user=client.get_user(member.id), delete_message_days=1,
+                                       reason='Spam Bot Auto Ban')
             break
 
     if member.pending is False:
@@ -112,7 +111,6 @@ async def on_member_remove(member):
 # UPDATE EVENT #
 @client.event
 async def on_member_update(before, after):
-
     current_guild = client.guilds[0]
 
     before_roles = before.roles
@@ -132,7 +130,8 @@ async def on_member_update(before, after):
                         role = current_guild.get_role(int(await cogs.colors.get_color_role(before.id)))
                         print('Moving Role')
                         await current_guild.edit_role_positions(
-                             positions={role: current_guild.get_role(int(await helpers.role_helper.get_role_id('mod'))).position + 1})
+                            positions={role: current_guild.get_role(
+                                int(await helpers.role_helper.get_role_id('mod'))).position + 1})
 
     # LOSE ROLE #
     if len(before.roles) > len(after.roles):
@@ -156,7 +155,8 @@ async def on_member_update(before, after):
                         role = current_guild.get_role(int(await cogs.colors.get_color_role(before.id)))
                         print('Moving Role')
                         await current_guild.edit_role_positions(
-                             positions={role: current_guild.get_role(int(await helpers.role_helper.get_role_id('mod'))).position})
+                            positions={role: current_guild.get_role(
+                                int(await helpers.role_helper.get_role_id('mod'))).position})
 
     if await helpers.role_helper.is_role_defined('user'):
         if after.pending is False and not await helpers.role_helper.has_role(current_guild, before.id, 'user'):
@@ -181,6 +181,11 @@ async def on_command_error(ctx, error):
             embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
         return
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send(
+            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
+        )
+        return
     raise error
 
 @client.event
@@ -192,7 +197,8 @@ async def on_member_ban(_guild, user):
 
         await asyncio.sleep(2)
 
-        async for log in _guild.audit_logs(limit=1, action=discord.AuditLogAction.ban, after=(datetime.datetime.now() - datetime.timedelta(seconds=5))):
+        async for log in _guild.audit_logs(limit=1, action=discord.AuditLogAction.ban,
+                                           after=(datetime.datetime.now() - datetime.timedelta(seconds=5))):
             ban_giver = log.user
 
         embed = discord.Embed(
@@ -213,7 +219,6 @@ async def on_member_ban(_guild, user):
 
 # COMMANDS #
 # BOT COMMAND #
-
 @client.command()
 @commands.guild_only()
 async def bot(ctx):
@@ -223,7 +228,7 @@ async def bot(ctx):
         description=f'This bot was made by {bot_author.mention} in Python using the discord.py API.',
         color=await get_bot_color()
     )
-    embed.set_author(name=bot_author, icon_url=bot_author.avatar_url)
+    embed.set_author(name=bot_author, icon_url=bot_author.display_avatar)
     embed.add_field(
         name='Twitch',
         value='https://www.twitch.tv/spiderpigethan',
@@ -237,21 +242,17 @@ async def bot(ctx):
     )
 
     await ctx.send(embed=embed)
-    print(f'{ctx.author}({ctx.author.id}) executed Bot command.')
+    print(f'{client.user}({client.user.id}) executed Bot command.')
 
 # SETROLE COMMAND #
+valid_roles = ['sub', 'booster', 'mod', 'user', 'movie', 'game']
 @client.command()
-@commands.has_permissions(administrator=True)
 @commands.guild_only()
-async def setrole(ctx, role_name, *, role):
-
-    print(f'{ctx.author}({ctx.author.id}) executed SetRole command.')
-
-    valid_roles = ['sub', 'booster', 'mod', 'user', 'movie', 'game']
-    mentioned_roles = ctx.message.role_mentions
-    role_name = role_name.lower()
-    if len(mentioned_roles) > 0:
-        role = mentioned_roles[0]
+async def setrole(ctx, role_name, role):
+    if ctx.author.guild_permissions.administrator:
+        print(f'{ctx.author}({ctx.author.id}) executed SetRole command.')
+        role = ctx.message.role_mentions[0]
+        role_name = role_name.lower()
         role_is_valid = False
         for rname in valid_roles:
             if rname == role_name:
@@ -278,26 +279,22 @@ async def setrole(ctx, role_name, *, role):
             )
     else:
         await ctx.send(
-            embed=await helpers.embed_helper.create_error_embed(
-                'Please mention the role you would like to use.'
-            )
+            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
 
 # SETCHANNEL COMMAND #
+valid_channels = ['bot', 'booster', 'mod', 'admin', 'general', 'joins']
 @client.command()
-@commands.has_permissions(administrator=True)
 @commands.guild_only()
-async def setchannel(ctx, channel_name, *, text):
+async def setchannel(ctx, channel_name, channel):
+    if ctx.author.guild_permissions.administrator:
+        print(f'{ctx.author}({ctx.author.id}) executed SetChannel command.')
 
-    print(f'{ctx.author}({ctx.author.id}) executed SetChannel command.')
+        channel = ctx.message.channel_mentions[0]
+        channel_name = channel_name.lower()
 
-    valid_roles = ['bot', 'booster', 'mod', 'admin', 'general', 'joins']
-    mentioned_channels = ctx.message.channel_mentions
-    channel_name = channel_name.lower()
-    if len(mentioned_channels) > 0:
-        channel = mentioned_channels[0]
         channel_is_valid = False
-        for cname in valid_roles:
+        for cname in valid_channels:
             if cname == channel_name:
                 channel_is_valid = True
                 pass
@@ -322,89 +319,140 @@ async def setchannel(ctx, channel_name, *, text):
             )
     else:
         await ctx.send(
-            embed=await helpers.embed_helper.create_error_embed(
-                'Please mention the channel you would like to use.'
-            )
+            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
 
 # LOAD COMMAND #
 @client.command()
-@commands.has_permissions(administrator=True)
 @commands.guild_only()
-async def enable(ctx, extension):
-    client.load_extension(f'cogs.{extension}')
-    await enable_cog(extension)
-    print(f'{ctx.author}({ctx.author.id}) executed Enable command on module {extension}.')
-    await ctx.send(
-        embed=await helpers.embed_helper.create_success_embed(
-            f'Module `{extension}` has been enabled.',
-            await get_bot_color()
+async def enable(ctx, module_name):
+    if ctx.author.guild_permissions.administrator:
+        if not await is_cog_enabled(module_name):
+            await client.load_extension(f'cogs.{module_name}')
+            await enable_cog(module_name)
+            print(f'{ctx.author}({ctx.author.id}) executed Enable command on module {module_name}.')
+            await ctx.send(
+                embed=await helpers.embed_helper.create_success_embed(
+                    f'Module `{module_name}` has been enabled.',
+                    await get_bot_color()
+                )
+            )
+        else:
+            await ctx.send(
+                embed=await helpers.embed_helper.create_error_embed('This module is already enabled')
+            )
+    else:
+        await ctx.send(
+            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
-    )
 
 # UNLOAD COMMAND #
 @client.command()
-@commands.has_permissions(administrator=True)
-async def disable(ctx, extension):
-    client.unload_extension(f'cogs.{extension}')
-    await disable_cog(extension)
-    print(f'{ctx.author}({ctx.author.id}) executed Disable command on module {extension}.')
-    await ctx.send(
-        embed=await helpers.embed_helper.create_success_embed(
-            f'Module `{extension}` has been disabled.',
-            await get_bot_color()
+@commands.guild_only()
+async def disable(ctx, module_name):
+    if ctx.author.guild_permissions.administrator:
+        if await is_cog_enabled(module_name):
+            await client.unload_extension(f'cogs.{module_name}')
+            await disable_cog(module_name)
+            print(f'{ctx.author}({ctx.author.id}) executed Disable command on module {module_name}.')
+            await ctx.send(
+                embed=await helpers.embed_helper.create_success_embed(
+                    f'Module `{module_name}` has been disabled.',
+                    await get_bot_color()
+                )
+            )
+        else:
+            await ctx.send(
+                embed=await helpers.embed_helper.create_error_embed('This module is already disabled')
+            )
+    else:
+        await ctx.send(
+            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
-    )
 
 # RELOAD COMMAND #
 @client.command()
-@commands.has_permissions(administrator=True)
 @commands.guild_only()
-async def reload(ctx, extension):
-    client.unload_extension(f'cogs.{extension}')
-    client.load_extension(f'cogs.{extension}')
-    print(f'{ctx.author}({ctx.author.id}) executed Reload command on module {extension}.')
-    await ctx.send(
-        embed=await helpers.embed_helper.create_success_embed(
-            f'Module `{extension}` has been reloaded.',
-            await get_bot_color()
+async def reload(ctx, module_name):
+    if ctx.author.guild_permissions.administrator:
+        if await is_cog_enabled(module_name):
+            await client.unload_extension(f'cogs.{module_name}')
+            await client.load_extension(f'cogs.{module_name}')
+            print(f'{ctx.author}({ctx.author.id}) executed Reload command on module {module_name}.')
+            await ctx.send(
+                embed=await helpers.embed_helper.create_success_embed(
+                    f'Module `{module_name}` has been reloaded.',
+                    await get_bot_color()
+                )
+            )
+        else:
+            await ctx.send(
+                embed=await helpers.embed_helper.create_error_embed('This module is not enabled')
+            )
+    else:
+        await ctx.send(
+            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
-    )
+
+class ModuleView(View):
+    prev_button = Button(label='Previous', style=discord.ButtonStyle.green, custom_id=f'prev_mod{time.time()}')
+    next_button = Button(label='Next', style=discord.ButtonStyle.green, custom_id=f'next_mod{time.time()}')
+
+    def __init__(self, embeds, max_pages):
+        super().__init__()
+        self.page = 1
+        self.embeds = embeds
+        self.max_pages = max_pages
+        self.next_button.callback = self.button_callback
+        self.prev_button.callback = self.button_callback
+        self.add_item(self.prev_button)
+        self.add_item(self.next_button)
+        self.disable_buttons()
+        print(self.embeds)
+
+    async def button_callback(self, interaction: discord.Interaction):
+        button_id = interaction.data['custom_id']
+
+        if button_id == self.next_button.custom_id:
+            self.page += 1
+        elif button_id == self.prev_button.custom_id:
+            self.page -= 1
+
+        self.disable_buttons()
+
+        embed = self.embeds[self.page-1]
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    def disable_buttons(self):
+        if self.page <= 1:
+            self.prev_button.disabled = True
+        else:
+            self.prev_button.disabled = False
+        if self.page == self.max_pages:
+            self.next_button.disabled = True
+        else:
+            self.next_button.disabled = False
 
 @client.command()
 @commands.guild_only()
-async def modules(ctx, page=1):
-
+async def modules(ctx):
     print(f'{ctx.author}({ctx.author.id}) executed Modules command.')
 
+    embeds = []
     module_list = await get_cogs()
-
     modules_per_page = 6
 
     total_pages = math.ceil(len(module_list) / modules_per_page)
 
-    if page > total_pages:
-        await ctx.send(
-            embed=await helpers.embed_helper.create_error_embed(
-                f'That page does not exist, the last page is {total_pages}.'
-            )
-        )
-    elif page < 1:
-        await ctx.send(
-            embed=await helpers.embed_helper.create_error_embed(
-                'That page does not exist, the first page is 1.'
-            )
-        )
-    else:
+    for j in range(1, total_pages + 1):
         embed = discord.Embed(
-            title='Modules',
-            color=await get_bot_color()
+            color=await get_bot_color(),
+            title='--------------------------------------------------------------------------------------'
         )
-        number = min((modules_per_page * page), len(module_list))
-
-        for i in range((modules_per_page * (page - 1)), number):
+        embed.set_author(icon_url=client.user.display_avatar, name='Modules')
+        for i in range((modules_per_page * (j - 1)), min((modules_per_page * j), len(module_list))):
             module_status = 'Enabled' if bool(int(module_list[i][1])) else 'Disabled'
-            if i == modules_per_page * (page - 1):
+            if i == modules_per_page * (j - 1):
                 embed.add_field(name='Module', value=module_list[i][0], inline=True)
                 embed.add_field(name='Description', value=module_list[i][2], inline=True)
                 embed.add_field(name='Status', value=module_status, inline=True)
@@ -412,10 +460,15 @@ async def modules(ctx, page=1):
                 embed.add_field(name='\u200b', value=module_list[i][0], inline=True)
                 embed.add_field(name='\u200b', value=module_list[i][2], inline=True)
                 embed.add_field(name='\u200b', value=module_status, inline=True)
-        embed.add_field(name='\u200b', value=f'Page [{page}/{total_pages}]', inline=True)
-        await ctx.send(
-            embed=embed
-        )
+        embed.add_field(name='\u200b', value=f'Page [{j}/{total_pages}]', inline=True)
+        embeds.append(embed)
+
+    view = ModuleView(embeds, total_pages)
+
+    await ctx.send(
+        embed=embeds[0],
+        view=view
+    )
 
 @client.command()
 @commands.has_permissions(administrator=True)
@@ -470,7 +523,7 @@ async def whois(ctx, mention_user=None):
             role_message += f'{role.mention} '
 
     embed.add_field(
-        name=f'Roles [{len(user.roles)-1}]',
+        name=f'Roles [{len(user.roles) - 1}]',
         value=role_message,
         inline=False
     )
@@ -510,8 +563,8 @@ async def lookup(ctx, user_id):
             color=await get_bot_color(),
             description=user.mention
         )
-        embed.set_author(name=str(user), icon_url=user.avatar_url)
-        embed.set_thumbnail(url=user.avatar_url)
+        embed.set_author(name=str(user), icon_url=user.display_avatar)
+        embed.set_thumbnail(url=user.display_avatar)
         created_at = user.created_at
 
         embed.add_field(
@@ -546,7 +599,7 @@ async def ban(ctx, user_id, *, reason=''):
             color=await get_bot_color(),
             description=f'{ctx.author.mention} banned {user}.'
         )
-        embed.set_author(name=str(user), icon_url=user.avatar_url)
+        embed.set_author(name=str(user), icon_url=user.display_avatar)
         if len(reason) > 0:
             embed.add_field(name='Reason', value=reason, inline=False)
         embed.set_footer(text=f'Discord ID: {user.id}')
@@ -570,7 +623,7 @@ async def massban(ctx, username, *, reason=''):
             color=await get_bot_color(),
             description=f'{ctx.author.mention} banned {user}.'
         )
-        embed.set_author(name=str(user), icon_url=user.avatar_url)
+        embed.set_author(name=str(user), icon_url=user.display_avatar)
         if len(reason) > 0:
             embed.add_field(name='Reason', value=reason, inline=False)
         embed.set_footer(text=f'Discord ID: {user.id}')
@@ -629,7 +682,7 @@ async def help(ctx):
         title='CLICK HERE FOR A LIST OF COMMANDS',
         url=url
     )
-    embed.set_author(name=client.user.name, icon_url=client.user.avatar_url)
+    embed.set_author(name=client.user.name, icon_url=client.user.display_avatar)
 
     await ctx.send(embed=embed)
 
@@ -667,15 +720,14 @@ async def load_cogs():
     for filename in os.listdir('./cogs'):
         if filename.endswith('.py'):
             cog_name = filename[:-3]
-
             mod = import_module(f'cogs.{cog_name}')
             met = getattr(mod, 'description')
             description = met
             if not await is_cog_defined(cog_name):
                 db.execute('INSERT INTO cogs VALUES (?,?,?)', (cog_name, int(True), description))
-                client.load_extension(f'cogs.{cog_name}')
+                await client.load_extension(f'cogs.{cog_name}')
             elif await is_cog_enabled(cog_name):
-                client.load_extension(f'cogs.{cog_name}')
+                await client.load_extension(f'cogs.{cog_name}')
     connection.commit()
 
 async def get_bot_color():

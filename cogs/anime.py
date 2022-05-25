@@ -2,6 +2,7 @@ import discord
 
 from mal import Anime, Manga, AnimeSearch, MangaSearch
 from discord.ext import commands
+from discord.ui import Button, View
 
 description = 'Allows users to search and display data on Anime and Manga via MyAnimeList.'
 
@@ -59,7 +60,11 @@ class AnimeModule(commands.Cog):
 
         embed.set_footer(text=f'Aired: {anime_data_2.aired}')
 
-        await ctx.send(embed=embed)
+        button = Button(label='View on site', style=discord.ButtonStyle.url, url=anime_data_2.url)
+        view = View()
+        view.add_item(button)
+
+        await ctx.send(embed=embed, view=view)
 
     @commands.command(name='manga')
     @commands.guild_only()
@@ -107,7 +112,11 @@ class AnimeModule(commands.Cog):
 
         embed.set_footer(text=f'Published: {manga_data_2.published}')
 
-        await ctx.send(embed=embed)
+        button = Button(label='View on site', style=discord.ButtonStyle.url, url=manga_data_2.url)
+        view = View()
+        view.add_item(button)
+
+        await ctx.send(embed=embed, view=view)
 
 async def setup(client):
     await client.add_cog(AnimeModule(client))

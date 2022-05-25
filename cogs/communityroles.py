@@ -105,5 +105,5 @@ def is_message_set(name):
     else:
         return False
 
-def setup(client):
-    client.add_cog(CommunityRoles(client))
+async def setup(client):
+    await client.add_cog(CommunityRoles(client))

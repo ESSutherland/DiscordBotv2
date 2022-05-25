@@ -180,5 +180,5 @@ async def get_all_whitelists():
 
     return results
 
-def setup(client):
-    client.add_cog(Minecraft(client))
+async def setup(client):
+    await client.add_cog(Minecraft(client))

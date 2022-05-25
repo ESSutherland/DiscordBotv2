@@ -109,5 +109,5 @@ class AnimeModule(commands.Cog):
 
         await ctx.send(embed=embed)
 
-def setup(client):
-    client.add_cog(AnimeModule(client))
+async def setup(client):
+    await client.add_cog(AnimeModule(client))

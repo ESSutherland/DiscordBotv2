@@ -177,8 +177,8 @@ async def update_villager_db():
                     villager_data['catch-translations'].get('catch-USen'), villager_data.get('hobby')))
         connection.commit()
 
-def setup(client):
-    client.add_cog(AnimalCrossing(client))
+async def setup(client):
+    await client.add_cog(AnimalCrossing(client))
 
 # FUNCTIONS FOUND ONLINE #
 

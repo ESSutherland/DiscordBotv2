@@ -372,8 +372,8 @@ async def get_multiplier(message):
 
     return multiplier
 
-def setup(client):
-    client.add_cog(Levels(client))
+async def setup(client):
+    await client.add_cog(Levels(client))
 
 # FUNCTIONS FOUND ONLINE #
 

@@ -181,5 +181,5 @@ async def get_all_color_roles():
 
     return results
 
-def setup(client):
-    client.add_cog(Colors(client))
+async def setup(client):
+    await client.add_cog(Colors(client))

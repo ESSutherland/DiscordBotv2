@@ -1,8 +1,10 @@
 discord.py
 mojang-api-3
-mcrcon~=0.6.0
-Pillow~=8.1.0
+mcrcon
+Pillow
 mal-api
-emoji~=1.2.0
-requests~=2.25.1
-pokebase
+emoji
+requests
+pokepy
+python-twitter
+discord

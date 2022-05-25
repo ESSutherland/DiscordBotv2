@@ -113,35 +113,35 @@ class PokemonModule(commands.Cog):
             blocked_forms = ['-rock-star', '-belle', '-pop-star', '-phd', '-libre', '-cosplay', '-totem', '-unknown']
             accepted_forms = []
 
-            if len(poke_species.varieties) > 1:
-                for f in poke_species.varieties:
-                    f_mon = p_client.get_pokemon(f.pokemon.name)[0]
-                    a = True
-                    for x in blocked_forms:
-                        if x in f_mon.name:
-                            a = False
-                    if a:
-                        poke_form = f_mon.forms[0]
-                        b = True
-                        for y in accepted_forms:
-                            if poke_form.name == y.name:
-                                b = False
-                        if b:
-                            accepted_forms.append(poke_form)
+            for f in poke_species.varieties:
+                f_mon = p_client.get_pokemon(f.pokemon.name)[0]
+                a = True
+                for x in blocked_forms:
+                    if x in f_mon.name:
+                        a = False
+                if a:
+                    poke_form = f_mon.forms[0]
+                    b = True
+                    for y in accepted_forms:
+                        if poke_form.name == y.name:
+                            b = False
+                    if b:
+                        accepted_forms.append(poke_form)
 
-            if len(poke.forms) > 1:
-                for f2 in poke.forms:
-                    a2 = True
-                    for x in blocked_forms:
-                        if x in f2.name:
-                            a2 = False
-                    if a2:
-                        b2 = True
-                        for y in accepted_forms:
-                            if f2.name == y.name:
-                                b2 = False
-                        if b2:
-                            accepted_forms.append(f2)
+            for f2 in poke.forms:
+                a2 = True
+                for x in blocked_forms:
+                    if x in f2.name:
+                        a2 = False
+                if a2:
+                    b2 = True
+                    for y in accepted_forms:
+                        if f2.name == y.name:
+                            b2 = False
+                    if b2:
+                        accepted_forms.append(f2)
+
+            print(accepted_forms)
 
             for j in range(1, len(accepted_forms)+1):
                 form = p_client.get_pokemon_form(accepted_forms[j-1].name)[0]

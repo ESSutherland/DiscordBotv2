@@ -172,7 +172,7 @@ class PokemonModule(commands.Cog):
                             continue
 
                 poke_name = get_english(poke_species.names)
-                poke_form = p_client.get_pokemon(form.name)[0]
+                poke_form = p_client.get_pokemon(form.id)[0]
 
                 type_names = []
                 type_string = ''

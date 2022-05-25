@@ -1,64 +1,99 @@
-import pokebase as pb
+import pokepy
 import discord
 import requests
 import helpers.embed_helper
+import time
 
 from discord.ext import commands
-from pokebase import cache
+from discord.ui import Button, View
 
 description = 'Allow users to get information on a specified pokemon'
 
 messages = []
 img_url = 'https://essutherland.github.io/bot-site/images/'
 
+p_client = pokepy.V2Client()
+
+class PokemonView(View):
+    prev_button = Button(label='Previous Form', style=discord.ButtonStyle.green, custom_id=f'prev_poke{time.time()}')
+    shiny_button = Button(label='Toggle Shiny', style=discord.ButtonStyle.blurple, custom_id=f'shiny_poke{time.time()}', emoji='✨')
+    next_button = Button(label='Next Form', style=discord.ButtonStyle.green, custom_id=f'next_poke{time.time()}')
+
+    def __init__(self, embeds, max_pages):
+        super().__init__()
+        self.page = 1
+        self.shiny = False
+        self.embeds = embeds
+        self.max_pages = max_pages
+        self.next_button.callback = self.button_callback
+        self.prev_button.callback = self.button_callback
+        self.shiny_button.callback = self.shiny_callback
+        self.add_item(self.prev_button)
+        self.add_item(self.shiny_button)
+        self.add_item(self.next_button)
+        self.disable_buttons()
+
+    async def button_callback(self, interaction: discord.Interaction):
+        button_id = interaction.data['custom_id']
+        if button_id == self.next_button.custom_id:
+            self.page += 1
+        elif button_id == self.prev_button.custom_id:
+            self.page -= 1
+
+        self.disable_buttons()
+
+        embed = self.embeds[self.page - 1]
+        self.shiny = False
+        self.update_image(embed)
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    async def shiny_callback(self, interaction: discord.Interaction):
+        button_id = interaction.data['custom_id']
+        embed: discord.Embed = self.embeds[self.page - 1]
+        if button_id == self.shiny_button.custom_id:
+            self.shiny = not self.shiny
+            self.update_image(embed)
+
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    def disable_buttons(self):
+        if self.page <= 1:
+            self.prev_button.disabled = True
+        else:
+            self.prev_button.disabled = False
+        if self.page == self.max_pages:
+            self.next_button.disabled = True
+        else:
+            self.next_button.disabled = False
+
+    def update_image(self, embed):
+        url_list = embed.image.url.split('/')
+        file_name = url_list[len(url_list) - 1]
+        file_list = file_name.split('_')
+        if self.shiny:
+            if len(file_list) < 6:
+                file_name = f'{file_name[:-4]}_s.png'
+                embed.set_image(url=f'{img_url}{file_name}')
+        else:
+            if len(file_list) > 5:
+                file_name = f'{file_name[:-6]}.png'
+                embed.set_image(url=f'{img_url}{file_name}')
+
 class PokemonModule(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-        cache.set_cache('./images/pokemon')
 
     @commands.Cog.listener()
     async def on_ready(self):
         print('Pokemon Module Loaded.')
 
-    @commands.Cog.listener()
-    @commands.guild_only()
-    async def on_raw_reaction_add(self, payload):
-        message = await self.client.guilds[0].get_channel(payload.channel_id).fetch_message(payload.message_id)
-        if message in messages:
-            if payload.emoji.name == '✨' and not payload.member.bot:
-                embed = message.embeds[0]
-                url_list = embed.image.url.split('/')
-                file_name = url_list[len(url_list)-1]
-                file_list = file_name.split('_')
-                footer = f'{embed.footer.text if embed.footer.text != discord.Embed.Empty else ""} (Shiny)'
-                if len(file_list) < 6:
-                    file_name = f'{file_name[:-4]}_s.png'
-                    embed.set_image(url=f'{img_url}{file_name}')
-                    embed.set_footer(text=footer)
-                    await message.edit(embed=embed)
-
-    @commands.Cog.listener()
-    @commands.guild_only()
-    async def on_raw_reaction_remove(self, payload):
-        message = await self.client.guilds[0].get_channel(payload.channel_id).fetch_message(payload.message_id)
-        if message in messages:
-            if payload.emoji.name == '✨':
-                embed = message.embeds[0]
-                url_list = embed.image.url.split('/')
-                file_name = url_list[len(url_list) - 1]
-                file_list = file_name.split('_')
-                footer = embed.footer.text.replace('(Shiny)', ' ')
-                if len(file_list) > 5:
-                    file_name = f'{file_name[:-6]}.png'
-                    embed.set_image(url=f'{img_url}{file_name}')
-                    embed.set_footer(text=footer)
-                    await message.edit(embed=embed)
-
     @commands.command(name='pokemon')
     @commands.guild_only()
-    async def pokemon(self, ctx, poke_name_or_id, page=1):
+    async def _pokemon(self, ctx, poke_name_or_id):
         print(f'{ctx.author}({ctx.author.id}) executed Pokemon command.')
+
+        embeds = []
 
         message = await ctx.send(embed=discord.Embed(
             title='Fetching Data...Please Wait.',
@@ -71,23 +106,22 @@ class PokemonModule(commands.Cog):
             poke_search = poke_name_or_id.lower()
 
         try:
-            poke_species = pb.pokemon_species(poke_search)
-            if page < 1:
-                pass
-            else:
+            poke_species = p_client.get_pokemon_species(poke_search)[0]
 
-                poke = pb.pokemon(poke_species.id)
+            poke = p_client.get_pokemon(poke_species.id)[0]
 
-                blocked_forms = ['-rock-star', '-belle', '-pop-star', '-phd', '-libre', '-cosplay', '-totem', '-unknown']
-                accepted_forms = []
+            blocked_forms = ['-rock-star', '-belle', '-pop-star', '-phd', '-libre', '-cosplay', '-totem', '-unknown']
+            accepted_forms = []
 
+            if len(poke_species.varieties) > 1:
                 for f in poke_species.varieties:
+                    f_mon = p_client.get_pokemon(f.pokemon.name)[0]
                     a = True
                     for x in blocked_forms:
-                        if x in f.pokemon.name:
+                        if x in f_mon.name:
                             a = False
                     if a:
-                        poke_form = f.pokemon.forms[0]
+                        poke_form = f_mon.forms[0]
                         b = True
                         for y in accepted_forms:
                             if poke_form.name == y.name:
@@ -95,6 +129,7 @@ class PokemonModule(commands.Cog):
                         if b:
                             accepted_forms.append(poke_form)
 
+            if len(poke.forms) > 1:
                 for f2 in poke.forms:
                     a2 = True
                     for x in blocked_forms:
@@ -108,15 +143,16 @@ class PokemonModule(commands.Cog):
                         if b2:
                             accepted_forms.append(f2)
 
-                form = pb.pokemon_form(accepted_forms[page-1].name)
-                poke = pb.pokemon(form.pokemon.name)
+            for j in range(1, len(accepted_forms)+1):
+                form = p_client.get_pokemon_form(accepted_forms[j-1].name)[0]
+                poke = p_client.get_pokemon(form.pokemon.name)[0]
 
                 file_name = ''
                 image_file = None
                 gender_options = ['mf', 'md', 'fd', 'mo', 'fo', 'uk']
 
                 for i in range(0, len(gender_options)):
-                    file_name = f'{poke_species.id}_{page - 1 if len(accepted_forms) > 1 else 0}_{gender_options[i]}_{"g" if "gmax" in poke.name else "n"}_0.png'
+                    file_name = f'{poke_species.id}_{j - 1 if len(accepted_forms) > 1 else 0}_{gender_options[i]}_{"g" if "gmax" in poke.name else "n"}_0.png'
                     image_string = f'{img_url}{file_name}'
 
                     req = requests.get(image_string)
@@ -136,15 +172,16 @@ class PokemonModule(commands.Cog):
                             continue
 
                 poke_name = get_english(poke_species.names)
+                poke_form = p_client.get_pokemon(form.name)[0]
 
                 type_names = []
                 type_string = ''
 
-                for poke_type in form.types:
-                    types = pb.type_(poke_type.type.name)
+                for poke_type in poke_form.types:
+                    types = p_client.get_type(poke_type.type.name)[0]
                     type_name = get_english(types.names)
                     type_names.append(type_name)
-                    if form.types.index(poke_type) == 0:
+                    if poke_form.types.index(poke_type) == 0:
                         type_string += f'{type_name}'
                     else:
                         type_string += f', {type_name}'
@@ -153,7 +190,7 @@ class PokemonModule(commands.Cog):
                 ability_string = ''
 
                 for ability in poke.abilities:
-                    ability_data = pb.ability(ability.ability.name)
+                    ability_data = p_client.get_ability(ability.ability.name)[0]
                     ability_name = get_english(ability_data.names)
                     ability_names.append(ability_name)
                     if poke.abilities.index(ability) == 0:
@@ -175,18 +212,20 @@ class PokemonModule(commands.Cog):
                 embed.add_field(name='Height/Weight', value=f'{"{:.1f}".format(poke.height*0.1)} m/{"{:.1f}".format(poke.weight*0.1)} kg')
 
                 for stat in poke.stats:
-                    stat_data = pb.stat(stat.stat.name)
+                    stat_data = p_client.get_stat(stat.stat.name)[0]
                     embed.add_field(name=get_english(stat_data.names), value=stat.base_stat, inline=True)
 
                 if len(accepted_forms) > 1:
-                    embed.set_footer(text=f'Forms [{page}/{len(accepted_forms)}]')
+                    embed.set_footer(text=f'Forms [{j}/{len(accepted_forms)}]')
 
-                msg = await ctx.send(embed=embed)
-                await msg.add_reaction("✨")
-                messages.append(msg)
+                embeds.append(embed)
 
-        except:
-            await ctx.send(embed=await helpers.embed_helper.create_error_embed(f'Unable to get info on `{poke_name_or_id}`. Please make sure you used the correct name or number.'))
+            view = PokemonView(embeds=embeds, max_pages=len(accepted_forms))
+            await ctx.send(embed=embeds[0], view=view)
+
+        except Exception:
+            await ctx.send(embed=await helpers.embed_helper.create_error_embed(f'Unable to find data on `{poke_search}`.'))
+            raise
 
         await message.delete()
 
@@ -200,5 +239,5 @@ def get_genus(genera):
         if x.language.name == 'en':
             return x.genus
 
-def setup(client):
-    client.add_cog(PokemonModule(client))
+async def setup(client):
+    await client.add_cog(PokemonModule(client))

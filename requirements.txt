@@ -5,6 +5,6 @@ Pillow
 mal-api
 emoji
 requests
-pokepy
+pokepy===0.4.0
 python-twitter
 discord

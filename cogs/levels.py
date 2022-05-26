@@ -146,7 +146,7 @@ class Levels(commands.Cog):
             embed=embed
         )
 
-    @app_commands.command(name='leaderboard')
+    @app_commands.command(name='leaderboard', description='Displays leaderboard of player levels in the server.')
     async def leaderboard(self, interaction: discord.Interaction):
 
         print(f'{interaction.user}({interaction.user.id}) executed Leaderboard command.')
@@ -169,33 +169,36 @@ class Levels(commands.Cog):
         for i in range(1, total_pages + 1):
             number = min((entry_per_page * i), len(top))
             for j in range(entry_per_page * (i - 1), number):
-                if count == 1:
-                    user_rank = first
-                elif count == 2:
-                    user_rank = second
-                elif count == 3:
-                    user_rank = third
+                if interaction.guild.get_member(int(top[j][0])):
+                    if count == 1:
+                        user_rank = first
+                    elif count == 2:
+                        user_rank = second
+                    elif count == 3:
+                        user_rank = third
+                    else:
+                        user_rank = f'-{count}-'
+
+                    embed.add_field(
+                        name='\u200b',
+                        value=f'**{user_rank} {interaction.guild.get_member(int(top[j][0])).mention} **',
+                        inline=True
+                    )
+
+                    embed.add_field(
+                        name='\u200b',
+                        value=f'`Level: {top[j][1]}`',
+                        inline=True
+                    )
+
+                    embed.add_field(
+                        name='\u200b',
+                        value=f'Exp: {top[j][2]}/{level_exp}',
+                        inline=True
+                    )
+                    count += 1
                 else:
-                    user_rank = f'-{count}-'
-
-                embed.add_field(
-                    name='\u200b',
-                    value=f'**{user_rank} {interaction.guild.get_member(int(top[j][0])).mention} **',
-                    inline=True
-                )
-
-                embed.add_field(
-                    name='\u200b',
-                    value=f'`Level: {top[j][1]}`',
-                    inline=True
-                )
-
-                embed.add_field(
-                    name='\u200b',
-                    value=f'Exp: {top[j][2]}/{level_exp}',
-                    inline=True
-                )
-                count += 1
+                    number += 1
             embeds.append(embed)
         view = LevelsView(embeds, total_pages)
         await interaction.response.send_message(

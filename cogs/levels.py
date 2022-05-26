@@ -186,7 +186,7 @@ class Levels(commands.Cog):
 
                 embed.add_field(
                     name='\u200b',
-                    value=f'**{user_rank} {interaction.guild.get_member(int(top[j][0])).mention} **',
+                    value=f'**{user_rank} {interaction.guild.get_member(int(top[j][0])).name} **',
                     # value=f'**{user_rank} {top[j][0]} **',
                     inline=True
                 )

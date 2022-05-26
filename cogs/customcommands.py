@@ -2,17 +2,21 @@ import discord
 import sqlite3
 import helpers.embed_helper
 import helpers.role_helper
+import helpers.config
 import math
 import time
 
 from discord.ext import commands
 from discord.ui import Button, View
+from discord import app_commands
+from discord.app_commands import Choice
 
 connection = sqlite3.connect("./db/config.db")
 db = connection.cursor()
 
 description = 'Allows the creation of custom commands and responses in the server.'
 
+server_id = helpers.config.server_id
 
 class CommandsView(View):
     prev_button = Button(label='Previous', style=discord.ButtonStyle.green, custom_id=f'prev_cmd{time.time()}')
@@ -51,6 +55,16 @@ class CommandsView(View):
             self.next_button.disabled = True
         else:
             self.next_button.disabled = False
+
+def get_level_string(level):
+    if level == '-a':
+        return 'Everyone'
+    elif level == '-b':
+        return 'Nitro Booster'
+    elif level == '-s':
+        return 'Subscriber'
+    elif level == '-m':
+        return 'Moderator'
 
 class CustomCommands(commands.Cog):
 
@@ -91,70 +105,60 @@ class CustomCommands(commands.Cog):
                     if str(message.author.id) == level or message.author.guild_permissions.administrator:
                         await send_response(message.channel, await get_response(command), message.author)
 
-    @commands.command(name='command')
-    @helpers.role_helper.is_mod()
-    @commands.guild_only()
-    async def custom_command(self, ctx, command_name, level, *, response):
+    valid_levels = ['-a', '-b', '-s', '-m']
+    level_choices = []
 
-        print(f'{ctx.author}({ctx.author.id}) executed Command command.')
+    for lvl in valid_levels:
+        level_choices.append(Choice(name=get_level_string(lvl), value=lvl))
 
-        valid_levels = ['-a', '-b', '-s', '-m']
-        if not await is_command(command_name):
-            if level in valid_levels:
-                await add_command(command_name, response, level)
-                await ctx.send(
-                    embed=await helpers.embed_helper.create_success_embed(
-                        f'Command `{command_name}` created successfully.',
-                        self.client.guilds[0].get_member(self.client.user.id).color
-                    )
-                )
-            elif len(ctx.message.mentions) > 0:
-                if len(ctx.message.mentions) > 1:
-                    await helpers.embed_helper.create_error_embed('Please only include one user.')
-                else:
-                    member = ctx.message.mentions[0]
-                    await add_command(command_name, response, member.id)
-                    await ctx.send(
+    @app_commands.command(name='command', description='Create a custom command to use in the server')
+    @app_commands.choices(level=level_choices)
+    async def custom_command(self, interaction: discord.Interaction, command_name: str, level: str, response: str):
+        if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
+            print(f'{interaction.user}({interaction.user.id}) executed Command command.')
+
+            if not await is_command(command_name):
+                if level in self.valid_levels:
+                    await add_command(command_name, response, level)
+                    await interaction.response.send_message(
                         embed=await helpers.embed_helper.create_success_embed(
                             f'Command `{command_name}` created successfully.',
                             self.client.guilds[0].get_member(self.client.user.id).color
                         )
                     )
-            else:
-                await ctx.send(
-                    embed=await helpers.embed_helper.create_error_embed(
-                        'Please use a valid permission flag. `-a` = Everyone, `-b` = Nitro Boosters, '
-                        '`-s` = Subscribers, `-m` = Mods, or you can `@ a user` to make a private command.'
+        else:
+            await interaction.response.send_message(
+                embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
+            )
+
+    @app_commands.command(name='delete', description='Delete a custom command from the server.')
+    async def delete(self, interaction: discord.Interaction, command_name: str):
+        if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
+            print(f'{interaction.user}({interaction.user.id}) executed Delete command.')
+
+            if await is_command(command_name):
+                await remove_command(command_name)
+                await interaction.response.send_message(
+                    embed=await helpers.embed_helper.create_success_embed(
+                        f'Command `{command_name}` deleted successfully.',
+                        self.client.guilds[0].get_member(self.client.user.id).color
                     )
                 )
-
-    @commands.command(name='delete')
-    @helpers.role_helper.is_mod()
-    @commands.guild_only()
-    async def delete(self, ctx, command_name):
-
-        print(f'{ctx.author}({ctx.author.id}) executed Delete command.')
-
-        if await is_command(command_name):
-            await remove_command(command_name)
-            await ctx.send(
-                embed=await helpers.embed_helper.create_success_embed(
-                    f'Command `{command_name}` deleted successfully.',
-                    self.client.guilds[0].get_member(self.client.user.id).color
+            else:
+                await interaction.response.send_message(
+                    embed=await helpers.embed_helper.create_error_embed(
+                        f'Command `{command_name}` does not exist.'
+                    )
                 )
-            )
         else:
-            await ctx.send(
-                embed=await helpers.embed_helper.create_error_embed(
-                    f'Command `{command_name}` does not exist.'
-                )
+            await interaction.response.send_message(
+                embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
             )
 
-    @commands.command(name='commands')
-    @commands.guild_only()
-    async def custom_commands(self, ctx):
+    @app_commands.command(name='commands', description='Shows list of the custom commands on the server.')
+    async def custom_commands(self, interaction: discord.Interaction):
 
-        print(f'{ctx.author}({ctx.author.id}) executed Commands command.')
+        print(f'{interaction.user}({interaction.user.id}) executed Commands command.')
 
         embeds = []
         command_list = await get_commands()
@@ -173,50 +177,21 @@ class CustomCommands(commands.Cog):
                 if i == commands_per_page * (j - 1):
                     embed.add_field(name='Command', value=command_list[i][0], inline=True)
                     embed.add_field(name='Response', value=command_list[i][1], inline=True)
-                    embed.add_field(name='Permission', value=await get_level_string(ctx, command_list[i][2]),
-                                    inline=True)
+                    embed.add_field(name='Permission', value=get_level_string(command_list[i][2]), inline=True)
                 else:
                     embed.add_field(name='\u200b', value=command_list[i][0], inline=True)
                     embed.add_field(name='\u200b', value=command_list[i][1], inline=True)
-                    embed.add_field(name='\u200b', value=await get_level_string(ctx, command_list[i][2]), inline=True)
+                    embed.add_field(name='\u200b', value=get_level_string(command_list[i][2]), inline=True)
             embed.add_field(name='\u200b', value=f'Page [{j}/{total_pages}]', inline=True)
 
             embeds.append(embed)
 
         view = CommandsView(embeds, total_pages)
 
-        await ctx.send(
+        await interaction.response.send_message(
             embed=embeds[0],
             view=view
         )
-
-    @custom_command.error
-    async def custom_command_error(self, ctx, error):
-        if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(
-                embed=await helpers.embed_helper.create_error_embed(
-                    f'Please include all parameters. `{self.client.command_prefix}command '
-                    f'<command name> <permission flag> <response>`'
-                )
-            )
-
-    @custom_commands.error
-    async def custom_commands_error(self, ctx, error):
-        if isinstance(error, commands.BadArgument):
-            await ctx.send(
-                embed=await helpers.embed_helper.create_error_embed(
-                    f'Please only use a whole numbers to specify a page.'
-                )
-            )
-
-    @delete.error
-    async def delete_error(self, ctx, error):
-        if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(
-                embed=await helpers.embed_helper.create_error_embed(
-                    f'Please include all parameters. `{self.client.command_prefix}delete <command name>`'
-                )
-            )
 
 async def send_response(channel, response, author):
     message = response
@@ -259,17 +234,5 @@ async def get_commands():
 
     return data
 
-async def get_level_string(ctx, level):
-    if level == '-a':
-        return 'Everyone'
-    elif level == '-b':
-        return 'Nitro Booster'
-    elif level == '-s':
-        return 'Subscriber'
-    elif level == '-m':
-        return 'Moderator'
-    else:
-        return ctx.guild.get_member(int(level)).mention
-
 async def setup(client):
-    await client.add_cog(CustomCommands(client))
+    await client.add_cog(CustomCommands(client), guild=discord.Object(id=server_id))

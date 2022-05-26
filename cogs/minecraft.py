@@ -1,13 +1,20 @@
 import sqlite3
+
+import discord
+
 import helpers.embed_helper
 import helpers.role_helper
+import helpers.config
 
 from discord.ext import commands
 from mojang_api import Player, get_status
 from mcrcon import MCRcon
+from discord import app_commands
 
 connection = sqlite3.connect('./db/config.db')
 db = connection.cursor()
+
+server_id = helpers.config.server_id
 
 description = 'Allows twitch subscribers to whitelist themselves on the connected Minecraft server.'
 
@@ -38,59 +45,56 @@ class Minecraft(commands.Cog):
         print('Minecraft Module Loaded.')
 
     # COMMANDS #
-    @commands.command(name="whitelist")
-    @helpers.role_helper.is_sub()
-    @commands.guild_only()
-    async def whitelist(self, ctx, username):
+    @app_commands.command(name='whitelist', description='Allows subscribers to whitelist themselves on the linked Minecraft server.')
+    async def whitelist(self, interaction: discord.Interaction, username: str):
+        author = interaction.user
+        if await helpers.role_helper.has_role(interaction.guild, author.id, 'sub') or await helpers.role_helper.has_role(interaction.guild, author.id, 'mod'):
+            print(f'{author}({author.id}) executed Whitelist command.')
 
-        print(f'{ctx.author}({ctx.author.id}) executed Whitelist command.')
-
-        if await is_rcon_enabled():
-            if await helpers.role_helper.is_role_defined('sub'):
-                player = None
-                try:
-                    player = Player(username=username)
-                except:
-                    await ctx.send(
-                        embed=await helpers.embed_helper.create_error_embed(
-                            f'`{username}` is not a valid Minecraft account.'
+            if await is_rcon_enabled():
+                if await helpers.role_helper.is_role_defined('sub'):
+                    player = None
+                    try:
+                        player = Player(username=username)
+                    except:
+                        await interaction.response.send_message(
+                            embed=await helpers.embed_helper.create_error_embed(
+                                f'`{username}` is not a valid Minecraft account.'
+                            )
                         )
-                    )
+                    else:
+                        await whitelist_add_user(author.id, username)
+                        await interaction.response.send_message(
+                            embed=await helpers.embed_helper.create_success_embed(
+                                f'Set whitelist for {author.mention}: `{player.username}`',
+                                self.client.guilds[0].get_member(self.client.user.id).color
+                            )
+                        )
                 else:
-                    await whitelist_add_user(ctx.author.id, username)
-                    await ctx.send(
-                        embed=await helpers.embed_helper.create_success_embed(
-                            f'Set whitelist for {ctx.author.mention}: `{player.username}`',
-                            self.client.guilds[0].get_member(self.client.user.id).color
+                    await interaction.response.send_message(
+                        embed=await helpers.embed_helper.create_error_embed(
+                            'Sub role has not been set.'
                         )
                     )
             else:
-                await ctx.send(
+                await interaction.response.send_message(
                     embed=await helpers.embed_helper.create_error_embed(
-                        'Sub role has not been set. Please have an administrator use `!setrole sub @<role>`.'
+                        'RCON has not been set up yet, please ask an admin to set it up.'
                     )
                 )
-        else:
-            await ctx.send(
-                embed=await helpers.embed_helper.create_error_embed(
-                    'RCON has not been set up yet, please ask an admin to set it up.'
+
+    @app_commands.command(name='setrcon', description='Used to set up the RCON information of the Minecraft server.')
+    async def set_rcon(self, interaction: discord.Interaction, rcon_ip: str, rcon_port: str, rcon_password: str):
+        if interaction.user.guild_permissions.administrator:
+            print(f'{interaction.user}({interaction.user.id}) executed SetRCON command.')
+
+            await set_rcon(rcon_ip, rcon_port, rcon_password)
+            await interaction.response.send_message(
+                embed=await helpers.embed_helper.create_success_embed(
+                    'RCON Info Set.',
+                    interaction.guild.get_member(self.client.user.id).color
                 )
             )
-
-    @commands.command(name='setrcon')
-    @commands.has_permissions(administrator=True)
-    @commands.guild_only()
-    async def set_rcon(self, ctx, rcon_ip, rcon_port, rcon_password):
-
-        print(f'{ctx.author}({ctx.author.id}) executed SetRCON command.')
-
-        await set_rcon(rcon_ip, rcon_port, rcon_password)
-        await ctx.send(
-            embed=await helpers.embed_helper.create_success_embed(
-                'RCON Info Set.',
-                self.client.guilds[0].get_member(self.client.user.id).color
-            )
-        )
 
     @whitelist.error
     async def whitelist_error(self, ctx, error):
@@ -181,4 +185,4 @@ async def get_all_whitelists():
     return results
 
 async def setup(client):
-    await client.add_cog(Minecraft(client))
+    await client.add_cog(Minecraft(client), guild=discord.Object(id=server_id))

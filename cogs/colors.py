@@ -2,14 +2,18 @@ import discord
 import sqlite3
 import helpers.role_helper
 import helpers.embed_helper
+import helpers.config
 
 from discord.ext import commands
 from PIL import Image, ImageColor
+from discord import app_commands
 
 connection = sqlite3.connect("./db/config.db")
 db = connection.cursor()
 
 description = 'Allows Server Boosters to change the color of their name in the server.'
+
+server_id = helpers.config.server_id
 
 class Colors(commands.Cog):
 
@@ -35,118 +39,111 @@ class Colors(commands.Cog):
         print('Colors Module Loaded.')
 
     # COMMANDS #
-    @commands.command(name='color', aliases=['colour'])
-    @helpers.role_helper.is_booster(admin=False)
-    @commands.guild_only()
-    async def color_command(self, ctx, input_hex, user_id=None):
-        print(f'{ctx.author}({ctx.author.id}) executed Color Command.')
+    @app_commands.command(name='color', description='Allows Nitro Boosters to change the color of their name in the server.')
+    async def color_command(self, interaction: discord.Interaction, input_hex: str):
+        print(f'{interaction.user}({interaction.user.id}) executed Color Command.')
 
         if (
             await helpers.role_helper.is_role_defined('booster') and
             await helpers.role_helper.is_role_defined('mod')
         ):
+            if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'booster'):
 
-            # ROLE VARIABLES #
-            mod_role_id = await helpers.role_helper.get_role_id('mod')
-            color_hex = input_hex if input_hex.startswith('#') else f'#{input_hex}'
-            rgb = ImageColor.getrgb(color_hex)
-            role_color = discord.Color.from_rgb(rgb[0], rgb[1], rgb[2])
-
-            img = Image.new('RGB', (64, 64), color=rgb)
-            img.save('./images/colors/last_color.png')
-
-            color_img = discord.File('./images/colors/last_color.png')
-
-            if user_id is None:
-                author = ctx.author
-                author_id = ctx.author.id
-            else:
-                author_id = int(user_id)
-                author = ctx.guild.get_member(author_id)
-
-            # DISABLE DEFAULT COLOR #
-            if role_color == discord.Color.default():
-                await ctx.send(
-                    embed=await helpers.embed_helper.create_error_embed(
-                        'You cannot use this color, please select another.'
+                # ROLE VARIABLES #
+                mod_role_id = await helpers.role_helper.get_role_id('mod')
+                color_hex = input_hex if input_hex.startswith('#') else f'#{input_hex}'
+                try:
+                    rgb = ImageColor.getrgb(color_hex)
+                except:
+                    await interaction.response.send_message(
+                        embed=await helpers.embed_helper.create_error_embed(
+                            'Please use a valid Hex value `#FFFFFF or FFFFFF`.'
+                        )
                     )
-                )
+                    return
 
-            # CHECK FOR EXISTING ROLE #
-            elif await has_color_role(author_id):
-                role_id = await get_color_role(author_id)
-                role = ctx.guild.get_role(int(role_id))
-                await role.edit(color=role_color)
-                await ctx.send(
-                    file=color_img,
-                    embed=await helpers.embed_helper.create_color_success_embed(
-                        color_hex, role_color, ctx.author
+                role_color = discord.Color.from_rgb(rgb[0], rgb[1], rgb[2])
+
+                img = Image.new('RGB', (64, 64), color=rgb)
+                img.save('./images/colors/last_color.png')
+
+                color_img = discord.File('./images/colors/last_color.png')
+
+                author = interaction.user
+                author_id = interaction.user.id
+
+                # DISABLE DEFAULT COLOR #
+                if role_color == discord.Color.default():
+                    await interaction.response.send_message(
+                        embed=await helpers.embed_helper.create_error_embed(
+                            'You cannot use this color, please select another.'
+                        )
                     )
-                )
 
-            # CREATE NEW ROLE #
-            else:
-                role = await ctx.guild.create_role(
-                    name=author.name, color=role_color
-                )
+                # CHECK FOR EXISTING ROLE #
+                elif await has_color_role(author_id):
+                    role_id = await get_color_role(author_id)
+                    role = interaction.guild.get_role(int(role_id))
+                    await role.edit(color=role_color)
+                    await interaction.response.send_message(
+                        file=color_img,
+                        embed=await helpers.embed_helper.create_color_success_embed(
+                            color_hex, role_color, author
+                        )
+                    )
 
-                await ctx.guild.get_member(author_id).add_roles(role)
-
-                if await helpers.role_helper.has_role(ctx.guild, author_id, 'mod'):
-                    await ctx.guild.edit_role_positions(positions={role: ctx.guild.get_role(int(mod_role_id)).position})
+                # CREATE NEW ROLE #
                 else:
-                    await ctx.guild.edit_role_positions(positions={role: ctx.guild.get_role(int(mod_role_id)).position - 1})
-
-                await add_color_role(author_id, role.id)
-
-                await ctx.send(
-                    file=color_img,
-                    embed=await helpers.embed_helper.create_color_success_embed(
-                        color_hex, role_color, author
+                    role = await interaction.guild.create_role(
+                        name=author.name, color=role_color
                     )
+
+                    await interaction.guild.get_member(author_id).add_roles(role)
+
+                    if await helpers.role_helper.has_role(interaction.guild, author_id, 'mod'):
+                        await interaction.guild.edit_role_positions(positions={role: interaction.guild.get_role(int(mod_role_id)).position})
+                    else:
+                        await interaction.guild.edit_role_positions(positions={role: interaction.guild.get_role(int(mod_role_id)).position - 1})
+
+                    await add_color_role(author_id, role.id)
+
+                    await interaction.response.send_message(
+                        file=color_img,
+                        embed=await helpers.embed_helper.create_color_success_embed(
+                            color_hex, role_color, author
+                        )
+                    )
+
+            else:
+                await interaction.response.send_message(
+                    embed=await helpers.embed_helper.create_error_embed(
+                        'You do not have permission to use this command.')
                 )
         elif (
             await helpers.role_helper.is_role_defined('booster') and not
             await helpers.role_helper.is_role_defined('mod')
         ):
-            await ctx.send(
+            await interaction.response.send_message(
                 embed=await helpers.embed_helper.create_error_embed(
-                    'Mod role has not been set. Please have an administrator use `!setrole mod @<role>`.'
+                    'Mod role has not been set.'
                 )
             )
         elif (
             await helpers.role_helper.is_role_defined('mod') and not
             await helpers.role_helper.is_role_defined('booster')
         ):
-            await ctx.send(
+            await interaction.response.send_message(
                 embed=await helpers.embed_helper.create_error_embed(
-                    'Booster role has not been set. Please have an administrator use `!setrole booster @<role>`.'
+                    'Booster role has not been set.'
                 )
             )
         else:
-            await ctx.send(
+            await interaction.response.send_message(
                 embed=await helpers.embed_helper.create_error_embed(
-                    'Booster and Mod role have not been set. ' +
-                    'Please have an administrator use `!setrole <role_name> @<role>`.'
+                    'Booster and Mod role have not been set.'
                 )
             )
 
-    # COMMAND ERROR HANDLERS #
-    @color_command.error
-    async def color_command_error(self, ctx, error):
-        if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(
-                embed=await helpers.embed_helper.create_error_embed(
-                    'Please include Hex value `!color <HEX>`.'
-                )
-            )
-        elif isinstance(error, commands.CommandInvokeError):
-            if isinstance(error.__cause__, ValueError):
-                await ctx.send(
-                    embed=await helpers.embed_helper.create_error_embed(
-                        'Please use a valid Hex value `#FFFFFF or FFFFFF`.'
-                    )
-            )
 
 # FUNCTIONS #
 async def has_color_role(user_id):
@@ -182,4 +179,4 @@ async def get_all_color_roles():
     return results
 
 async def setup(client):
-    await client.add_cog(Colors(client))
+    await client.add_cog(Colors(client), guild=discord.Object(id=server_id))

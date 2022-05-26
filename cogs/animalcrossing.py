@@ -2,9 +2,13 @@ import sqlite3
 import discord
 import requests
 import helpers.embed_helper
+import helpers.config
 
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
+from discord import app_commands
+
+server_id = helpers.config.server_id
 
 connection = sqlite3.connect('./db/config.db')
 db = connection.cursor()
@@ -25,10 +29,9 @@ class AnimalCrossing(commands.Cog):
         connection.commit()
         print('Animal Crossing Module Loaded.')
 
-    @commands.command(name='villager')
-    @commands.guild_only()
-    async def villager(self, ctx, *, villager_name):
-        print(f'{ctx.author}({ctx.author.id}) executed Villager command.')
+    @app_commands.command(name='villager', description='Get information about the specified Animal Crossing: New Horizons villager.')
+    async def villager(self, interaction: discord.Interaction, villager_name: str):
+        print(f'{interaction.user}({interaction.user.id}) executed Villager command.')
         if await is_villager(villager_name):
             villager = await get_villager_data(villager_name)
             box_color = '#ded9c6'
@@ -80,8 +83,8 @@ class AnimalCrossing(commands.Cog):
             hobby_draw.text((int((hobby_w/2)-(hobby_size[0]/2)), int((hobby_h/2)-(hobby_size[1]/2))), f'Hobby: {villager.get("hobby")}', font=font2, fill=text_color)
 
             template = Image.open(fp='./images/animalcrossing/villager_box.png')
-            image = Image.open(requests.get(villager.get('image'), stream=True).raw)
-            icon = Image.open(requests.get(villager.get('icon'), stream=True).raw)
+            image = Image.open(requests.get(villager.get('image'), stream=True, verify=False).raw)
+            icon = Image.open(requests.get(villager.get('icon'), stream=True, verify=False).raw)
             sign = Image.open(fp=f'./images/animalcrossing/{get_sign(month, day)}.png').convert("RGBA")
             sign = sign.resize((40, 40))
             cake = Image.open(fp=f'./images/animalcrossing/birthday.png').convert("RGBA")
@@ -111,23 +114,22 @@ class AnimalCrossing(commands.Cog):
 
             template.save('./images/animalcrossing/last_villager.png')
 
-            await ctx.send(
+            await interaction.response.send_message(
                 file=discord.File(fp='./images/animalcrossing/last_villager.png')
             )
 
         else:
-            await ctx.send(
+            await interaction.response.send_message(
                 embed=await helpers.embed_helper.create_error_embed(
                     f'Villager `{villager_name}` not Found! This command only supports villagers from Animal Crossing: New Horizons.'
                 )
             )
 
-    @commands.command(name='updatevillagers')
-    @commands.guild_only()
-    async def update_villagers(self, ctx):
-        await update_villager_db()
-
-        await ctx.send(embed=await helpers.embed_helper.create_success_embed('Villager data updated!', self.client.guilds[0].get_member(self.client.user.id).color))
+    # @app_commands.command(name='updatevillagers', description='Refreshes the database of villagers and retrieves new data.')
+    # async def update_villagers(self, interaction: discord.Interaction):
+    #     await update_villager_db()
+    #
+    #     await interaction.response.send_message('OK')
 
 async def is_villager(villager_name):
     db.execute('SELECT * FROM villagers WHERE LOWER(name) LIKE ?', (villager_name.lower(),))
@@ -160,25 +162,26 @@ async def get_villager_data(villager_name):
 
     return villager_dict
 
-async def update_villager_db():
-    db.execute('DELETE FROM villagers')
-    connection.commit()
-
-    response = requests.get('https://acnhapi.com/v1/villagers/')
-
-    for villager in response.json():
-        villager_data = response.json().get(villager)
-
-        db.execute('INSERT INTO villagers VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                   (villager_data.get('id'), villager_data.get('file-name'), villager_data['name'].get('name-USen'),
-                    villager_data.get('personality'), villager_data.get('birthday-string'), villager_data.get('species'),
-                    villager_data.get('gender'), villager_data.get('icon_uri'), villager_data.get('image_uri'),
-                    villager_data.get('bubble-color'), villager_data.get('text-color'),
-                    villager_data['catch-translations'].get('catch-USen'), villager_data.get('hobby')))
-        connection.commit()
+# async def update_villager_db():
+#     db.execute('DELETE FROM villagers')
+#     connection.commit()
+#
+#     response = requests.get('https://acnhapi.com/v1/villagers/', verify=False)
+#
+#     for villager in response.json():
+#         villager_data = response.json().get(villager)
+#
+#         db.execute('INSERT INTO villagers VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
+#                    (villager_data.get('id'), villager_data.get('file-name'), villager_data['name'].get('name-USen'),
+#                     villager_data.get('personality'), villager_data.get('birthday-string'), villager_data.get('species'),
+#                     villager_data.get('gender'), villager_data.get('icon_uri'), villager_data.get('image_uri'),
+#                     villager_data.get('bubble-color'), villager_data.get('text-color'),
+#                     villager_data['catch-translations'].get('catch-USen'), villager_data.get('hobby')))
+#         connection.commit()
 
 async def setup(client):
-    await client.add_cog(AnimalCrossing(client))
+    await client.add_cog(AnimalCrossing(client), guild=discord.Object(id=server_id))
+
 
 # FUNCTIONS FOUND ONLINE #
 

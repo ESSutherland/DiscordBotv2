@@ -2,14 +2,17 @@ import pokepy
 import discord
 import requests
 import helpers.embed_helper
+import helpers.config
 import time
 
 from discord.ext import commands
 from discord.ui import Button, View
+from discord import app_commands
 
 description = 'Allow users to get information on a specified pokemon'
 
-messages = []
+server_id = helpers.config.server_id
+
 img_url = 'https://essutherland.github.io/bot-site/images/'
 
 p_client = pokepy.V2Client()
@@ -74,10 +77,12 @@ class PokemonView(View):
             if len(file_list) < 6:
                 file_name = f'{file_name[:-4]}_s.png'
                 embed.set_image(url=f'{img_url}{file_name}')
+            embed.set_footer(text=f'Forms [{self.page}/{self.max_pages}] ✨')
         else:
             if len(file_list) > 5:
                 file_name = f'{file_name[:-6]}.png'
                 embed.set_image(url=f'{img_url}{file_name}')
+            embed.set_footer(text=f'Forms [{self.page}/{self.max_pages}]')
 
 class PokemonModule(commands.Cog):
 
@@ -88,22 +93,21 @@ class PokemonModule(commands.Cog):
     async def on_ready(self):
         print('Pokemon Module Loaded.')
 
-    @commands.command(name='pokemon')
-    @commands.guild_only()
-    async def _pokemon(self, ctx, poke_name_or_id):
-        print(f'{ctx.author}({ctx.author.id}) executed Pokemon command.')
+    @app_commands.command(name='pokemon', description='Get information about the specified Pokemon.')
+    async def _pokemon(self, interaction: discord.Interaction, name_or_id: str):
+        print(f'{interaction.user}({interaction.user.id}) executed Pokemon command.')
 
         embeds = []
 
-        message = await ctx.send(embed=discord.Embed(
+        await interaction.response.send_message(embed=discord.Embed(
             title='Fetching Data...Please Wait.',
             color=self.client.guilds[0].get_member(self.client.user.id).color
         ))
 
         try:
-            poke_search = int(poke_name_or_id)
+            poke_search = int(name_or_id)
         except:
-            poke_search = poke_name_or_id.lower()
+            poke_search = name_or_id.lower()
 
         try:
             poke_species = p_client.get_pokemon_species(poke_search)[0]
@@ -172,7 +176,10 @@ class PokemonModule(commands.Cog):
                             continue
 
                 poke_name = get_english(poke_species.names)
-                poke_form = p_client.get_pokemon(form.id)[0]
+                try:
+                    poke_form = p_client.get_pokemon(form.name)[0]
+                except:
+                    poke_form = p_client.get_pokemon(form.id)[0]
 
                 type_names = []
                 type_string = ''
@@ -215,19 +222,16 @@ class PokemonModule(commands.Cog):
                     stat_data = p_client.get_stat(stat.stat.name)[0]
                     embed.add_field(name=get_english(stat_data.names), value=stat.base_stat, inline=True)
 
-                if len(accepted_forms) > 1:
-                    embed.set_footer(text=f'Forms [{j}/{len(accepted_forms)}]')
+                embed.set_footer(text=f'Forms [{j}/{len(accepted_forms)}]')
 
                 embeds.append(embed)
 
             view = PokemonView(embeds=embeds, max_pages=len(accepted_forms))
-            await ctx.send(embed=embeds[0], view=view)
+            await interaction.edit_original_message(embed=embeds[0], view=view)
 
         except Exception:
-            await ctx.send(embed=await helpers.embed_helper.create_error_embed(f'Unable to find data on `{poke_search}`.'))
+            await interaction.edit_original_message(embed=await helpers.embed_helper.create_error_embed(f'Unable to find data on `{poke_search}`.'))
             raise
-
-        await message.delete()
 
 def get_english(names):
     for x in names:
@@ -240,4 +244,4 @@ def get_genus(genera):
             return x.genus
 
 async def setup(client):
-    await client.add_cog(PokemonModule(client))
+    await client.add_cog(PokemonModule(client), guild=discord.Object(id=server_id))

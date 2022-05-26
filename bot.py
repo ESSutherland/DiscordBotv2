@@ -10,24 +10,24 @@ import math
 import asyncio
 import datetime
 import time
+import helpers.config
 
-from configparser import ConfigParser
 from discord.ext import commands
 from importlib import import_module
 from discord.ui import Button, View
-
-# CONFIG INFO #
-cfg = ConfigParser()
-cfg.read('config.ini')
+from discord import app_commands
+from discord.app_commands import Choice
 
 # BOT INFO #
-bot_token = cfg.get('Bot', 'token')
-bot_prefix = cfg.get('Bot', 'command_prefix')
-bot_message = cfg.get('Bot', 'status_message')
+bot_prefix = helpers.config.bot_prefix
+app_id = helpers.config.app_id
+bot_token = helpers.config.bot_token
+bot_message = helpers.config.bot_message
+server_id = helpers.config.server_id
 bot_author_id = 106882411781947392
 intents = discord.Intents.all()
 
-client = commands.Bot(command_prefix=bot_prefix,intents=intents)
+client = commands.Bot(command_prefix=bot_prefix, intents=intents, application_id=app_id)
 client.remove_command('help')
 
 # DB INFO #
@@ -44,7 +44,7 @@ async def on_ready():
     db.execute('CREATE TABLE IF NOT EXISTS banned_names(username text unique)')
     connection.commit()
     await client.change_presence(
-        activity=discord.Game(name=f'{bot_message} | {bot_prefix}help')
+        activity=discord.Game(name=f'{bot_message} | /help')
     )
 
     for member in client.guilds[0].members:
@@ -57,6 +57,7 @@ async def on_ready():
                         )
                     )
 
+    await client.tree.sync(guild=discord.Object(id=server_id))
     print(f'Bot ({client.user}) is now online')
 
 # JOIN EVENT #
@@ -190,7 +191,7 @@ async def on_command_error(ctx, error):
 
 @client.event
 async def on_member_ban(_guild, user):
-    ban_list = await _guild.bans()
+    ban_list = [entry async for entry in _guild.bans(limit=2000)]
     if await helpers.channel_helper.is_channel_defined('mod'):
         channel = client.guilds[0].get_channel(await helpers.channel_helper.get_channel_id('mod'))
         ban_giver = ''
@@ -206,7 +207,7 @@ async def on_member_ban(_guild, user):
             color=await get_bot_color(),
             description=f'{ban_giver.mention} banned {user}.'
         )
-        embed.set_author(name=str(user), icon_url=user.avatar_url)
+        embed.set_author(name=str(user), icon_url=user.display_avatar)
 
         for _ban in ban_list:
             if _ban.user.id == user.id:
@@ -219,9 +220,8 @@ async def on_member_ban(_guild, user):
 
 # COMMANDS #
 # BOT COMMAND #
-@client.command()
-@commands.guild_only()
-async def bot(ctx):
+@client.tree.command(guild=discord.Object(id=server_id), name='bot', description='Get information about the bot.')
+async def bot(interaction: discord.Interaction):
     bot_author = client.get_user(bot_author_id)
     embed = discord.Embed(
         title=client.user.name,
@@ -241,156 +241,146 @@ async def bot(ctx):
         inline=False
     )
 
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
     print(f'{client.user}({client.user.id}) executed Bot command.')
 
 # SETROLE COMMAND #
 valid_roles = ['sub', 'booster', 'mod', 'user', 'movie', 'game']
-@client.command()
-@commands.guild_only()
-async def setrole(ctx, role_name, role):
-    if ctx.author.guild_permissions.administrator:
-        print(f'{ctx.author}({ctx.author.id}) executed SetRole command.')
-        role = ctx.message.role_mentions[0]
+role_choices = []
+for r in valid_roles:
+    role_choices.append(Choice(name=r, value=r))
+
+@client.tree.command(guild=discord.Object(id=server_id), name='setrole', description='Assign the specified role to a defined role variable in the bot.')
+@app_commands.choices(role_name=role_choices)
+async def setrole(interaction: discord.Interaction, role_name: str, role: discord.Role):
+    if interaction.user.guild_permissions.administrator:
+        print(f'{interaction.user}({interaction.user.id}) executed SetRole command.')
         role_name = role_name.lower()
-        role_is_valid = False
-        for rname in valid_roles:
-            if rname == role_name:
-                role_is_valid = True
-                pass
-        if role_is_valid:
-            if await helpers.role_helper.is_role_defined(role_name):
-                db.execute('UPDATE roles SET role_id=? WHERE role_name=?', (role.id, role_name))
-            else:
-                db.execute('INSERT INTO roles VALUES (?,?)', (role_name, role.id))
-            print(f'{role_name} role set to {role}({role.id})')
-            await ctx.send(
-                embed=await helpers.embed_helper.create_success_embed(
-                    f'`{role_name}` role set to {role.mention}',
-                    await get_bot_color()
-                )
-            )
-            connection.commit()
+
+        if await helpers.role_helper.is_role_defined(role_name):
+            db.execute('UPDATE roles SET role_id=? WHERE role_name=?', (role.id, role_name))
         else:
-            await ctx.send(
-                embed=await helpers.embed_helper.create_error_embed(
-                    f'`{role_name}` is not a valid role name.'
-                )
+            db.execute('INSERT INTO roles VALUES (?,?)', (role_name, role.id))
+        print(f'{role_name} role set to {role}({role.id})')
+        await interaction.response.send_message(
+            embed=await helpers.embed_helper.create_success_embed(
+                f'`{role_name}` role set to {role.mention}',
+                await get_bot_color()
             )
+        )
+        connection.commit()
     else:
-        await ctx.send(
+        await interaction.response.send_message(
             embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
 
 # SETCHANNEL COMMAND #
 valid_channels = ['bot', 'booster', 'mod', 'admin', 'general', 'joins']
-@client.command()
-@commands.guild_only()
-async def setchannel(ctx, channel_name, channel):
-    if ctx.author.guild_permissions.administrator:
-        print(f'{ctx.author}({ctx.author.id}) executed SetChannel command.')
+channel_choices = []
+for c in valid_channels:
+    channel_choices.append(Choice(name=c, value=c))
 
-        channel = ctx.message.channel_mentions[0]
+@client.tree.command(guild=discord.Object(id=server_id), name='setchannel', description='Assign the specified channel to a defined channel variable in the bot.')
+@app_commands.choices(channel_name=channel_choices)
+async def setchannel(interaction: discord.Interaction, channel_name: str, channel: discord.TextChannel):
+    if interaction.user.guild_permissions.administrator:
+        print(f'{interaction.user}({interaction.user.id}) executed SetChannel command.')
         channel_name = channel_name.lower()
 
-        channel_is_valid = False
-        for cname in valid_channels:
-            if cname == channel_name:
-                channel_is_valid = True
-                pass
-        if channel_is_valid:
-            if await helpers.channel_helper.is_channel_defined(channel_name):
-                db.execute('UPDATE channels SET channel_id=? WHERE channel_name=?', (channel.id, channel_name))
-            else:
-                db.execute('INSERT INTO channels VALUES (?,?)', (channel_name, channel.id))
-            print(f'{channel_name} channel set to {channel}({channel.id})')
-            await ctx.send(
-                embed=await helpers.embed_helper.create_success_embed(
-                    f'`{channel_name}` channel set to {channel.mention}',
-                    await get_bot_color()
-                )
-            )
-            connection.commit()
+        if await helpers.channel_helper.is_channel_defined(channel_name):
+            db.execute('UPDATE channels SET channel_id=? WHERE channel_name=?', (channel.id, channel_name))
         else:
-            await ctx.send(
-                embed=await helpers.embed_helper.create_error_embed(
-                    f'`{channel_name}` is not a valid channel name.'
-                )
+            db.execute('INSERT INTO channels VALUES (?,?)', (channel_name, channel.id))
+        print(f'{channel_name} channel set to {channel}({channel.id})')
+        await interaction.response.send_message(
+            embed=await helpers.embed_helper.create_success_embed(
+                f'`{channel_name}` channel set to {channel.mention}',
+                await get_bot_color()
             )
+        )
+        connection.commit()
     else:
-        await ctx.send(
+        await interaction.response.send_message(
             embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
 
+
+db.execute('SELECT cog_name FROM cogs')
+results = db.fetchall()
+cog_list = []
+for c in results:
+    name = c[0]
+    cog_list.append(Choice(name=name, value=name))
+
 # LOAD COMMAND #
-@client.command()
-@commands.guild_only()
-async def enable(ctx, module_name):
-    if ctx.author.guild_permissions.administrator:
+@client.tree.command(guild=discord.Object(id=server_id), name='enable', description='Enables a feature module in the bot.')
+@app_commands.choices(module_name=cog_list)
+async def enable(interaction: discord.Interaction, module_name: str):
+    if interaction.user.guild_permissions.administrator:
         if not await is_cog_enabled(module_name):
             await client.load_extension(f'cogs.{module_name}')
             await enable_cog(module_name)
-            print(f'{ctx.author}({ctx.author.id}) executed Enable command on module {module_name}.')
-            await ctx.send(
+            print(f'{interaction.user}({interaction.user.id}) executed Enable command on module {module_name}.')
+            await interaction.response.send_message(
                 embed=await helpers.embed_helper.create_success_embed(
                     f'Module `{module_name}` has been enabled.',
                     await get_bot_color()
                 )
             )
         else:
-            await ctx.send(
+            await interaction.response.send_message(
                 embed=await helpers.embed_helper.create_error_embed('This module is already enabled')
             )
     else:
-        await ctx.send(
+        await interaction.response.send_message(
             embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
 
 # UNLOAD COMMAND #
-@client.command()
-@commands.guild_only()
-async def disable(ctx, module_name):
-    if ctx.author.guild_permissions.administrator:
+@client.tree.command(guild=discord.Object(id=server_id), name='disable', description='Disables a feature module in the bot.')
+@app_commands.choices(module_name=cog_list)
+async def disable(interaction: discord.Interaction, module_name: str):
+    if interaction.user.guild_permissions.administrator:
         if await is_cog_enabled(module_name):
             await client.unload_extension(f'cogs.{module_name}')
             await disable_cog(module_name)
-            print(f'{ctx.author}({ctx.author.id}) executed Disable command on module {module_name}.')
-            await ctx.send(
+            print(f'{interaction.user}({interaction.user.id}) executed Disable command on module {module_name}.')
+            await interaction.response.send_message(
                 embed=await helpers.embed_helper.create_success_embed(
                     f'Module `{module_name}` has been disabled.',
                     await get_bot_color()
                 )
             )
         else:
-            await ctx.send(
+            await interaction.response.send_message(
                 embed=await helpers.embed_helper.create_error_embed('This module is already disabled')
             )
     else:
-        await ctx.send(
+        await interaction.response.send_message(
             embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
 
 # RELOAD COMMAND #
-@client.command()
-@commands.guild_only()
-async def reload(ctx, module_name):
-    if ctx.author.guild_permissions.administrator:
+@client.tree.command(guild=discord.Object(id=server_id), name='reload', description='Reloads a feature module in the bot.')
+@app_commands.choices(module_name=cog_list)
+async def reload(interaction: discord.Interaction, module_name: str):
+    if interaction.user.guild_permissions.administrator:
         if await is_cog_enabled(module_name):
             await client.unload_extension(f'cogs.{module_name}')
             await client.load_extension(f'cogs.{module_name}')
-            print(f'{ctx.author}({ctx.author.id}) executed Reload command on module {module_name}.')
-            await ctx.send(
+            print(f'{interaction.user}({interaction.user.id}) executed Reload command on module {module_name}.')
+            await interaction.response.send_message(
                 embed=await helpers.embed_helper.create_success_embed(
                     f'Module `{module_name}` has been reloaded.',
                     await get_bot_color()
                 )
             )
         else:
-            await ctx.send(
+            await interaction.response.send_message(
                 embed=await helpers.embed_helper.create_error_embed('This module is not enabled')
             )
     else:
-        await ctx.send(
+        await interaction.response.send_message(
             embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
 
@@ -433,72 +423,77 @@ class ModuleView(View):
         else:
             self.next_button.disabled = False
 
-@client.command()
-@commands.guild_only()
-async def modules(ctx):
-    print(f'{ctx.author}({ctx.author.id}) executed Modules command.')
+@client.tree.command(guild=discord.Object(id=server_id), name='modules', description='List all modules and their status.')
+async def modules(interaction: discord.Interaction):
+    if interaction.user.guild_permissions.administrator:
+        print(f'{interaction.user}({interaction.user.id}) executed Modules command.')
 
-    embeds = []
-    module_list = await get_cogs()
-    modules_per_page = 6
+        embeds = []
+        module_list = await get_cogs()
+        modules_per_page = 6
 
-    total_pages = math.ceil(len(module_list) / modules_per_page)
+        total_pages = math.ceil(len(module_list) / modules_per_page)
 
-    for j in range(1, total_pages + 1):
-        embed = discord.Embed(
-            color=await get_bot_color(),
-            title='--------------------------------------------------------------------------------------'
+        for j in range(1, total_pages + 1):
+            embed = discord.Embed(
+                color=await get_bot_color(),
+                title='--------------------------------------------------------------------------------------'
+            )
+            embed.set_author(icon_url=client.user.display_avatar, name='Modules')
+            for i in range((modules_per_page * (j - 1)), min((modules_per_page * j), len(module_list))):
+                module_status = 'Enabled' if bool(int(module_list[i][1])) else 'Disabled'
+                if i == modules_per_page * (j - 1):
+                    embed.add_field(name='Module', value=module_list[i][0], inline=True)
+                    embed.add_field(name='Description', value=module_list[i][2], inline=True)
+                    embed.add_field(name='Status', value=module_status, inline=True)
+                else:
+                    embed.add_field(name='\u200b', value=module_list[i][0], inline=True)
+                    embed.add_field(name='\u200b', value=module_list[i][2], inline=True)
+                    embed.add_field(name='\u200b', value=module_status, inline=True)
+            embed.add_field(name='\u200b', value=f'Page [{j}/{total_pages}]', inline=True)
+            embeds.append(embed)
+
+        view = ModuleView(embeds, total_pages)
+
+        await interaction.response.send_message(
+            embed=embeds[0],
+            view=view
         )
-        embed.set_author(icon_url=client.user.display_avatar, name='Modules')
-        for i in range((modules_per_page * (j - 1)), min((modules_per_page * j), len(module_list))):
-            module_status = 'Enabled' if bool(int(module_list[i][1])) else 'Disabled'
-            if i == modules_per_page * (j - 1):
-                embed.add_field(name='Module', value=module_list[i][0], inline=True)
-                embed.add_field(name='Description', value=module_list[i][2], inline=True)
-                embed.add_field(name='Status', value=module_status, inline=True)
-            else:
-                embed.add_field(name='\u200b', value=module_list[i][0], inline=True)
-                embed.add_field(name='\u200b', value=module_list[i][2], inline=True)
-                embed.add_field(name='\u200b', value=module_status, inline=True)
-        embed.add_field(name='\u200b', value=f'Page [{j}/{total_pages}]', inline=True)
-        embeds.append(embed)
-
-    view = ModuleView(embeds, total_pages)
-
-    await ctx.send(
-        embed=embeds[0],
-        view=view
-    )
-
-@client.command()
-@commands.has_permissions(administrator=True)
-@commands.guild_only()
-async def status(ctx, *, message):
-    print(f'{ctx.author}({ctx.author.id}) executed Status command.')
-    global bot_message
-    bot_message = message
-    cfg_file = open('config.ini', 'w')
-    cfg.set('Bot', 'status_message', message)
-    cfg.write(cfg_file)
-    cfg_file.close()
-    await client.change_presence(
-        activity=discord.Game(name=f'{bot_message} | {bot_prefix}help')
-    )
-
-@client.command()
-@commands.guild_only()
-async def whois(ctx, mention_user=None):
-    print(f'{ctx.author}({ctx.author.id}) executed WhoIs command.')
-    if len(ctx.message.mentions) == 0 and mention_user is None:
-        user = ctx.author
     else:
-        user = ctx.message.mentions[0]
+        await interaction.response.send_message(
+            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
+        )
+
+@client.tree.command(guild=discord.Object(id=server_id), name='status', description='Change the playing status of the bot to the specified message.')
+async def status(interaction: discord.Interaction, message: str):
+    if interaction.user.guild_permissions.administrator:
+        print(f'{interaction.user}({interaction.user.id}) executed Status command.')
+        global bot_message
+        bot_message = message
+        cfg_file = open('config.ini', 'w')
+        cfg.set('Bot', 'status_message', message)
+        cfg.write(cfg_file)
+        cfg_file.close()
+        await client.change_presence(
+            activity=discord.Game(name=f'{bot_message} | /help')
+        )
+        await interaction.response.send_message(
+            embed=await helpers.embed_helper.create_success_embed('Bot status updated!', await get_bot_color())
+        )
+    else:
+        await interaction.response.send_message(
+            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
+        )
+
+@client.tree.command(guild=discord.Object(id=server_id), name='whois', description='Get information about the user.')
+async def whois(interaction: discord.Interaction, user: discord.Member):
+    print(f'{interaction.user}({interaction.user.id}) executed WhoIs command.')
 
     embed = discord.Embed(
         description=user.mention,
         color=user.color
     )
-    embed.set_author(name=user, icon_url=user.avatar_url)
+    embed.set_author(name=user, icon_url=user.display_avatar)
     created_at = user.created_at
     joined_at = user.joined_at
 
@@ -532,7 +527,7 @@ async def whois(ctx, mention_user=None):
 
     for perm in user.guild_permissions:
         if await helpers.role_helper.is_role_defined('user'):
-            if perm not in ctx.guild.get_role(
+            if perm not in interaction.guild.get_role(
                     await helpers.role_helper.get_role_id('user')
             ).permissions:
                 if perm[1]:
@@ -545,122 +540,138 @@ async def whois(ctx, mention_user=None):
             inline=False
         )
 
-    embed.set_thumbnail(url=user.avatar_url)
+    embed.set_thumbnail(url=user.display_avatar)
     embed.set_footer(text=f'ID: {user.id}')
 
-    await ctx.send(
+    await interaction.response.send_message(
         embed=embed
     )
 
-@client.command()
-@helpers.role_helper.is_mod()
-@commands.guild_only()
-async def lookup(ctx, user_id):
-    print(f'{ctx.author}({ctx.author.id}) executed Lookup command.')
-    try:
-        user = await client.fetch_user(user_id)
-        embed = discord.Embed(
-            color=await get_bot_color(),
-            description=user.mention
+@client.tree.command(guild=discord.Object(id=server_id), name='lookup', description='Lookup a discord user via user ID.')
+async def lookup(interaction: discord.Interaction, user_id: str):
+    if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
+        print(f'{interaction.user}({interaction.user.id}) executed Lookup command.')
+        try:
+            user = await client.fetch_user(int(user_id))
+            embed = discord.Embed(
+                color=await get_bot_color(),
+                description=user.mention
+            )
+            embed.set_author(name=str(user), icon_url=user.display_avatar)
+            embed.set_thumbnail(url=user.display_avatar)
+            created_at = user.created_at
+
+            embed.add_field(
+                name='Registered',
+                value=created_at.strftime('%a, %b %d, %Y %I:%M %p'),
+                inline=True
+            )
+
+            await interaction.response.send_message(
+                embed=embed
+            )
+        except:
+            await interaction.response.send_message(embed=await helpers.embed_helper.create_error_embed(f'`{user_id}` is not a valid Discord user ID.'))
+    else:
+        await interaction.response.send_message(
+            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
-        embed.set_author(name=str(user), icon_url=user.display_avatar)
-        embed.set_thumbnail(url=user.display_avatar)
-        created_at = user.created_at
 
-        embed.add_field(
-            name='Registered',
-            value=created_at.strftime('%a, %b %d, %Y %I:%M %p'),
-            inline=True
+@client.tree.command(guild=discord.Object(id=server_id), name='ban', description='Ban a user from the server using their discord ID.')
+async def ban(interaction: discord.Interaction, user_id: str, reason: str):
+    if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
+        print(f'{interaction.user}({interaction.user.id}) executed Ban command.')
+        user = None
+        try:
+            user = await client.fetch_user(int(user_id))
+        except:
+            await interaction.response.send_message(
+                embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
+            )
+
+        if user:
+            ban_reason = f'{interaction.user.name}: {reason}'
+            await interaction.guild.ban(user=user, delete_message_days=1, reason=ban_reason)
+            embed = discord.Embed(
+                title='User Banned!',
+                color=await get_bot_color(),
+                description=f'{interaction.user.mention} banned {user}.'
+            )
+            embed.set_author(name=str(user), icon_url=user.display_avatar)
+            if len(reason) > 0:
+                embed.add_field(name='Reason', value=reason, inline=False)
+            embed.set_footer(text=f'Discord ID: {user.id}')
+            if await helpers.channel_helper.is_channel_defined('mod'):
+                channel = interaction.guild.get_channel(await helpers.channel_helper.get_channel_id('mod'))
+                await channel.send(embed=embed)
+            await interaction.response.send_message(embed=await helpers.embed_helper.create_success_embed('User Banned!', await get_bot_color()))
+    else:
+        await interaction.response.send_message(
+            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
 
-        await ctx.send(
-            embed=embed
+@client.tree.command(guild=discord.Object(id=server_id), name='massban', description='Ban multiple users from the server using a username.')
+async def massban(interaction: discord.Interaction, username: str, reason: str):
+    if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
+        print(f'{interaction.user}({interaction.user.id}) executed Mass Ban command.')
+        members = await interaction.guild.query_members(query=f'{username}')
+        ban_reason = f'{interaction.user.name}: {reason}'
+
+        for m in members:
+            user = client.get_user(m.id)
+            await interaction.guild.ban(user=user, delete_message_days=1, reason=ban_reason)
+            embed = discord.Embed(
+                title='User Banned!',
+                color=await get_bot_color(),
+                description=f'{interaction.user.mention} banned {user}.'
+            )
+            embed.set_author(name=str(user), icon_url=user.display_avatar)
+            if len(reason) > 0:
+                embed.add_field(name='Reason', value=reason, inline=False)
+            embed.set_footer(text=f'Discord ID: {user.id}')
+            if await helpers.channel_helper.is_channel_defined('mod'):
+                channel = interaction.guild.get_channel(await helpers.channel_helper.get_channel_id('mod'))
+                await channel.send(embed=embed)
+    else:
+        await interaction.response.send_message(
+            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
-    except:
-        print('ERROR')
 
-@client.command()
-@helpers.role_helper.is_mod()
-@commands.guild_only()
-async def ban(ctx, user_id, *, reason=''):
-    print(f'{ctx.author}({ctx.author.id}) executed Ban command.')
-    user = None
-    try:
-        user = await client.fetch_user(user_id)
-    except:
-        if len(ctx.message.mentions) > 0:
-            user = ctx.message.mentions[0]
-
-    if user:
-        ban_reason = f'{ctx.author.name}: {reason}'
-        await ctx.guild.ban(user=user, delete_message_days=0, reason=ban_reason)
-        embed = discord.Embed(
-            title='User Banned!',
-            color=await get_bot_color(),
-            description=f'{ctx.author.mention} banned {user}.'
+@client.tree.command(guild=discord.Object(id=server_id), name='autoban', description='Auto ban users based on a username.')
+async def autoban(interaction: discord.Interaction, username: str):
+    if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
+        print(f'{interaction.user}({interaction.user.id}) executed Auto Ban command.')
+        db.execute('INSERT INTO banned_names VALUES (?)', (username,))
+        connection.commit()
+        embed = await helpers.embed_helper.create_success_embed(
+            f'`{username}` Added To Auto-Ban List.',
+            await get_bot_color()
         )
-        embed.set_author(name=str(user), icon_url=user.display_avatar)
-        if len(reason) > 0:
-            embed.add_field(name='Reason', value=reason, inline=False)
-        embed.set_footer(text=f'Discord ID: {user.id}')
-        if await helpers.channel_helper.is_channel_defined('mod'):
-            channel = ctx.guild.get_channel(await helpers.channel_helper.get_channel_id('mod'))
-            await channel.send(embed=embed)
-
-@client.command()
-@helpers.role_helper.is_mod()
-@commands.guild_only()
-async def massban(ctx, username, *, reason=''):
-    print(f'{ctx.author}({ctx.author.id}) executed Mass Ban command.')
-    members = await ctx.guild.query_members(query=f'{username}')
-    ban_reason = f'{ctx.author.name}: {reason}'
-
-    for m in members:
-        user = client.get_user(m.id)
-        await ctx.guild.ban(user=user, delete_message_days=1, reason=ban_reason)
-        embed = discord.Embed(
-            title='User Banned!',
-            color=await get_bot_color(),
-            description=f'{ctx.author.mention} banned {user}.'
+        await interaction.response.send_message(embed=embed)
+    else:
+        await interaction.response.send_message(
+            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
-        embed.set_author(name=str(user), icon_url=user.display_avatar)
-        if len(reason) > 0:
-            embed.add_field(name='Reason', value=reason, inline=False)
-        embed.set_footer(text=f'Discord ID: {user.id}')
-        if await helpers.channel_helper.is_channel_defined('mod'):
-            channel = ctx.guild.get_channel(await helpers.channel_helper.get_channel_id('mod'))
-            await channel.send(embed=embed)
 
-@client.command()
-@helpers.role_helper.is_mod()
-@commands.guild_only()
-async def autoban(ctx, username):
-    print(f'{ctx.author}({ctx.author.id}) executed Auto Ban command.')
-    db.execute('INSERT INTO banned_names VALUES (?)', (username,))
-    connection.commit()
-    embed = await helpers.embed_helper.create_success_embed(
-        f'`{username}` Added To Auto-Ban List.',
-        await get_bot_color()
-    )
-    await ctx.channel.send(embed=embed)
+@client.tree.command(guild=discord.Object(id=server_id), name='unautoban', description='Remove a username form the auto ban list.')
+async def unautoban(interaction: discord.Interaction, username: str):
+    if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
+        print(f'{interaction.user}({interaction.user.id}) executed Un-Auto Ban Name command.')
+        db.execute('DELETE FROM banned_names WHERE username=?', (username,))
+        connection.commit()
+        embed = await helpers.embed_helper.create_success_embed(
+            f'`{username}` Removed From Auto-Ban List.',
+            await get_bot_color()
+        )
+        await interaction.response.send_message(embed=embed)
+    else:
+        await interaction.response.send_message(
+            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
+        )
 
-@client.command()
-@helpers.role_helper.is_mod()
-@commands.guild_only()
-async def unautoban(ctx, username):
-    print(f'{ctx.author}({ctx.author.id}) executed Un-Auto Ban Name command.')
-    db.execute('DELETE FROM banned_names WHERE username=?', (username,))
-    connection.commit()
-    embed = await helpers.embed_helper.create_success_embed(
-        f'`{username}` Removed From Auto-Ban List.',
-        await get_bot_color()
-    )
-    await ctx.channel.send(embed=embed)
-
-@client.command()
-@commands.guild_only()
-async def help(ctx):
-    print(f'{ctx.author}({ctx.author.id}) executed Help command.')
+@client.tree.command(guild=discord.Object(id=server_id), name='help', description='Get information about commands.')
+async def help(interaction: discord.Interaction):
+    print(f'{interaction.user}({interaction.user.id}) executed Help command.')
     url = f'https://essutherland.github.io/bot-site/?prefix={bot_prefix}&bot_name={client.user.name}'
     if await is_cog_enabled('animalcrossing'):
         url += '&animalcrossing=1'
@@ -684,7 +695,7 @@ async def help(ctx):
     )
     embed.set_author(name=client.user.name, icon_url=client.user.display_avatar)
 
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 async def is_cog_defined(cog):
     db.execute('SELECT * FROM cogs WHERE cog_name=?', (cog,))
@@ -734,5 +745,4 @@ async def get_bot_color():
     return client.guilds[0].get_member(client.user.id).color
 
 asyncio.run(load_cogs())
-
 client.run(bot_token)

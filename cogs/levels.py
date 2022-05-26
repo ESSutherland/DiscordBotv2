@@ -85,12 +85,12 @@ class Levels(commands.Cog):
         print('Levels Module Loaded.')
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         if not isinstance(message.channel, discord.DMChannel):
             msg_exp = 1
             author_id = message.author.id
             if not message.author.bot:
-                multiplier = await get_multiplier(message)
+                multiplier = await get_multiplier(message.author, message.guild)
 
                 if not await has_level(message.author.id):
                     db.execute('INSERT INTO levels(user_id) VALUES(?)', (author_id,))
@@ -122,7 +122,7 @@ class Levels(commands.Cog):
         user = interaction.user
         embed = discord.Embed(
             title=f'Rank: #{await get_rank(user.id) if await get_rank(user.id) > 0 else "N/A"}',
-            description=f'Multiplier **{await get_multiplier(interaction.message)}**',
+            description=f'Multiplier **{await get_multiplier(interaction.user, interaction.guild)}**',
             color=self.client.guilds[0].get_member(self.client.user.id).color
         )
         embed.set_author(name=user.name, icon_url=user.display_avatar)
@@ -163,10 +163,13 @@ class Levels(commands.Cog):
         top = []
 
         for u in levels:
-            if interaction.guild.get_member(u[0]):
+            print(interaction.guild.get_member(u[0]))
+            if interaction.guild.get_member(u[0]) is not None:
                 top.append(u)
 
         total_pages = math.ceil(len(top) / entry_per_page)
+
+        print(top)
 
         for i in range(1, total_pages + 1):
             embed = discord.Embed(
@@ -432,15 +435,15 @@ async def get_top_ranks():
     return results
 
 
-async def get_multiplier(message):
-    author_id = message.author.id
+async def get_multiplier(user, guild):
+    author_id = user.id
     multiplier = 1
     if await helpers.role_helper.is_role_defined('sub'):
-        if await helpers.role_helper.has_role(message.guild, author_id, 'sub'):
+        if await helpers.role_helper.has_role(guild, author_id, 'sub'):
             multiplier = 1.5
 
     if await helpers.role_helper.is_role_defined('booster'):
-        if await helpers.role_helper.has_role(message.guild, author_id, 'booster'):
+        if await helpers.role_helper.has_role(guild, author_id, 'booster'):
             multiplier = 2
 
     return multiplier

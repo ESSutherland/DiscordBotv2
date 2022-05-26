@@ -197,8 +197,6 @@ class Levels(commands.Cog):
                         inline=True
                     )
                     count += 1
-                else:
-                    number += 1
             embeds.append(embed)
         view = LevelsView(embeds, total_pages)
         await interaction.response.send_message(

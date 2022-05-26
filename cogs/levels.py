@@ -152,7 +152,7 @@ class Levels(commands.Cog):
         print(f'{interaction.user}({interaction.user.id}) executed Leaderboard command.')
         embeds = []
 
-        entry_per_page = 5
+        entry_per_page = 4
 
         first = ':first_place:'
         second = ':second_place:'

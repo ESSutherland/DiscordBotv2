@@ -122,7 +122,7 @@ class Levels(commands.Cog):
         user = interaction.user
         embed = discord.Embed(
             title=f'Rank: #{await get_rank(user.id) if await get_rank(user.id) > 0 else "N/A"}',
-            description=f'Multiplier **{await get_multiplier(interaction)}**',
+            description=f'Multiplier **{await get_multiplier(interaction.message)}**',
             color=self.client.guilds[0].get_member(self.client.user.id).color
         )
         embed.set_author(name=user.name, icon_url=user.display_avatar)

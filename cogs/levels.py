@@ -432,15 +432,15 @@ async def get_top_ranks():
     return results
 
 
-async def get_multiplier(interaction):
-    author_id = interaction.user.id
+async def get_multiplier(message):
+    author_id = message.author.id
     multiplier = 1
     if await helpers.role_helper.is_role_defined('sub'):
-        if await helpers.role_helper.has_role(interaction.guild, author_id, 'sub'):
+        if await helpers.role_helper.has_role(message.guild, author_id, 'sub'):
             multiplier = 1.5
 
     if await helpers.role_helper.is_role_defined('booster'):
-        if await helpers.role_helper.has_role(interaction.guild, author_id, 'booster'):
+        if await helpers.role_helper.has_role(message.guild, author_id, 'booster'):
             multiplier = 2
 
     return multiplier

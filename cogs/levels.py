@@ -163,13 +163,10 @@ class Levels(commands.Cog):
         top = []
 
         for u in levels:
-            print(interaction.guild.get_member(u[0]))
-            if interaction.guild.get_member(u[0]) is not None:
+            if interaction.guild.get_member(int(u[0])):
                 top.append(u)
 
         total_pages = math.ceil(len(top) / entry_per_page)
-
-        print(top)
 
         for i in range(1, total_pages + 1):
             embed = discord.Embed(
@@ -177,7 +174,6 @@ class Levels(commands.Cog):
                 color=self.client.guilds[0].get_member(self.client.user.id).color
             )
             number = min((entry_per_page * i), len(top))
-            print(number)
             for j in range(entry_per_page * (i - 1), number):
                 if count == 1:
                     user_rank = first
@@ -190,7 +186,7 @@ class Levels(commands.Cog):
 
                 embed.add_field(
                     name='\u200b',
-                    value=f'**{user_rank} {interaction.guild.get_member(top[j][0]).mention} **',
+                    value=f'**{user_rank} {interaction.guild.get_member(int(top[j][0])).mention} **',
                     # value=f'**{user_rank} {top[j][0]} **',
                     inline=True
                 )
@@ -209,7 +205,6 @@ class Levels(commands.Cog):
                 count += 1
             embeds.append(embed)
         view = LevelsView(embeds, total_pages)
-        print(interaction.is_expired())
         await interaction.response.send_message(
             embed=embeds[0],
             view=view

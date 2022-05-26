@@ -15,7 +15,7 @@ import helpers.config
 from discord.ext import commands
 from importlib import import_module
 from discord.ui import Button, View
-from discord import app_commands
+from discord import app_commands, MemberCacheFlags
 from discord.app_commands import Choice
 
 # BOT INFO #
@@ -26,6 +26,7 @@ bot_message = helpers.config.bot_message
 server_id = helpers.config.server_id
 bot_author_id = 106882411781947392
 intents = discord.Intents.all()
+intents.members = True
 
 client = commands.Bot(command_prefix=bot_prefix, intents=intents, application_id=app_id)
 client.remove_command('help')
@@ -43,6 +44,7 @@ async def on_ready():
     db.execute('CREATE TABLE IF NOT EXISTS channels(channel_name text unique, channel_id integer)')
     db.execute('CREATE TABLE IF NOT EXISTS banned_names(username text unique)')
     connection.commit()
+
     await client.change_presence(
         activity=discord.Game(name=f'{bot_message} | /help')
     )

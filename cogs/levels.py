@@ -203,6 +203,7 @@ class Levels(commands.Cog):
                     inline=True
                 )
                 count += 1
+            embed.add_field(name='\u200b', value=f'Page [{i}/{total_pages}]', inline=True)
             embeds.append(embed)
         view = LevelsView(embeds, total_pages)
         await interaction.response.send_message(

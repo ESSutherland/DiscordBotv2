@@ -643,7 +643,7 @@ async def massban(interaction: discord.Interaction, username: str, reason: str):
             embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
 
-@client.tree.command(guild=discord.Object(id=server_id), name='autoban', description='Auto ban users based on a username.')
+@client.tree.command(guild=discord.Object(id=server_id), name='autoban', description='Add a username to a list that will be auto banned upon joining the server.')
 async def autoban(interaction: discord.Interaction, username: str):
     if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
         print(f'{interaction.user}({interaction.user.id}) executed Auto Ban command.')
@@ -678,7 +678,7 @@ async def unautoban(interaction: discord.Interaction, username: str):
 @client.tree.command(guild=discord.Object(id=server_id), name='help', description='Get information about commands.')
 async def help(interaction: discord.Interaction):
     print(f'{interaction.user}({interaction.user.id}) executed Help command.')
-    url = f'https://essutherland.github.io/bot-site/?prefix={bot_prefix}&bot_name={client.user.name}'
+    url = f'https://essutherland.github.io/bot-site/?&bot_name={client.user.name}'
     if await is_cog_enabled('animalcrossing'):
         url += '&animalcrossing=1'
     if await is_cog_enabled('colors'):
@@ -693,6 +693,8 @@ async def help(interaction: discord.Interaction):
         url += '&boostmessage=1'
     if await is_cog_enabled('anime'):
         url += '&anime=1'
+    if await is_cog_enabled('pokemon'):
+        url += '&pokemon=1'
 
     embed = discord.Embed(
         colour=await get_bot_color(),

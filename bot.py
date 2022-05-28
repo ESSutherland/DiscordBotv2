@@ -17,6 +17,7 @@ from importlib import import_module
 from discord.ui import Button, View
 from discord import app_commands, MemberCacheFlags
 from discord.app_commands import Choice
+from configparser import ConfigParser
 
 # BOT INFO #
 bot_prefix = helpers.config.bot_prefix
@@ -34,6 +35,9 @@ client.remove_command('help')
 # DB INFO #
 connection = sqlite3.connect("./db/config.db")
 db = connection.cursor()
+
+cfg = ConfigParser()
+cfg.read('config.ini')
 
 # EVENTS #
 

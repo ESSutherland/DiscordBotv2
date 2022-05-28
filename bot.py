@@ -584,7 +584,7 @@ async def lookup(interaction: discord.Interaction, user_id: str):
         )
 
 @client.tree.command(guild=discord.Object(id=server_id), name='ban', description='Ban a user from the server using their discord ID.')
-async def ban(interaction: discord.Interaction, user_id: str, reason: str):
+async def ban(interaction: discord.Interaction, user_id: str, reason: str = ''):
     if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
         print(f'{interaction.user}({interaction.user.id}) executed Ban command.')
         user = None
@@ -617,7 +617,7 @@ async def ban(interaction: discord.Interaction, user_id: str, reason: str):
         )
 
 @client.tree.command(guild=discord.Object(id=server_id), name='massban', description='Ban multiple users from the server using a username.')
-async def massban(interaction: discord.Interaction, username: str, reason: str):
+async def massban(interaction: discord.Interaction, username: str, reason: str = ''):
     if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
         print(f'{interaction.user}({interaction.user.id}) executed Mass Ban command.')
         members = await interaction.guild.query_members(query=f'{username}')

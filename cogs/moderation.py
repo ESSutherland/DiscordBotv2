@@ -76,7 +76,7 @@ class Moderation(commands.Cog):
 
         connection.commit()
 
-        print('Logging Module Loaded.')
+        print('Moderation Module Loaded.')
 
     @commands.Cog.listener()
     async def on_message(self, message):

@@ -195,35 +195,6 @@ async def on_command_error(ctx, error):
         return
     raise error
 
-@client.event
-async def on_member_ban(_guild, user):
-    ban_list = [entry async for entry in _guild.bans(limit=2000)]
-    if await helpers.channel_helper.is_channel_defined('mod'):
-        channel = client.guilds[0].get_channel(await helpers.channel_helper.get_channel_id('mod'))
-        ban_giver = ''
-
-        await asyncio.sleep(2)
-
-        async for log in _guild.audit_logs(limit=1, action=discord.AuditLogAction.ban,
-                                           after=(datetime.datetime.now() - datetime.timedelta(seconds=5))):
-            ban_giver = log.user
-
-        embed = discord.Embed(
-            title='User Banned!',
-            color=await get_bot_color(),
-            description=f'{ban_giver.mention} banned {user}.'
-        )
-        embed.set_author(name=str(user), icon_url=user.display_avatar)
-
-        for _ban in ban_list:
-            if _ban.user.id == user.id:
-                if _ban.reason is not None:
-                    embed.add_field(name='Reason', value=_ban.reason, inline=False)
-
-        embed.set_footer(text=f'Discord ID: {user.id}')
-        if not ban_giver.bot:
-            await channel.send(embed=embed)
-
 # COMMANDS #
 # BOT COMMAND #
 @client.tree.command(guild=discord.Object(id=server_id), name='bot', description='Get information about the bot.')
@@ -326,6 +297,7 @@ async def enable(interaction: discord.Interaction, module_name: str):
         if not await is_cog_enabled(module_name):
             await client.load_extension(f'cogs.{module_name}')
             await enable_cog(module_name)
+            await client.tree.sync(guild=discord.Object(id=server_id))
             print(f'{interaction.user}({interaction.user.id}) executed Enable command on module {module_name}.')
             await interaction.response.send_message(
                 embed=await helpers.embed_helper.create_success_embed(
@@ -350,6 +322,7 @@ async def disable(interaction: discord.Interaction, module_name: str):
         if await is_cog_enabled(module_name):
             await client.unload_extension(f'cogs.{module_name}')
             await disable_cog(module_name)
+            await client.tree.sync(guild=discord.Object(id=server_id))
             print(f'{interaction.user}({interaction.user.id}) executed Disable command on module {module_name}.')
             await interaction.response.send_message(
                 embed=await helpers.embed_helper.create_success_embed(
@@ -583,39 +556,6 @@ async def lookup(interaction: discord.Interaction, user_id: str):
             embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
 
-@client.tree.command(guild=discord.Object(id=server_id), name='ban', description='Ban a user from the server using their discord ID.')
-async def ban(interaction: discord.Interaction, user_id: str, reason: str = ''):
-    if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
-        print(f'{interaction.user}({interaction.user.id}) executed Ban command.')
-        user = None
-        try:
-            user = await client.fetch_user(int(user_id))
-        except:
-            await interaction.response.send_message(
-                embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
-            )
-
-        if user:
-            ban_reason = f'{interaction.user.name}: {reason}'
-            await interaction.guild.ban(user=user, delete_message_days=1, reason=ban_reason)
-            embed = discord.Embed(
-                title='User Banned!',
-                color=await get_bot_color(),
-                description=f'{interaction.user.mention} banned {user}.'
-            )
-            embed.set_author(name=str(user), icon_url=user.display_avatar)
-            if len(reason) > 0:
-                embed.add_field(name='Reason', value=reason, inline=False)
-            embed.set_footer(text=f'Discord ID: {user.id}')
-            if await helpers.channel_helper.is_channel_defined('mod'):
-                channel = interaction.guild.get_channel(await helpers.channel_helper.get_channel_id('mod'))
-                await channel.send(embed=embed)
-            await interaction.response.send_message(embed=await helpers.embed_helper.create_success_embed('User Banned!', await get_bot_color()))
-    else:
-        await interaction.response.send_message(
-            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
-        )
-
 @client.tree.command(guild=discord.Object(id=server_id), name='massban', description='Ban multiple users from the server using a username.')
 async def massban(interaction: discord.Interaction, username: str, reason: str = ''):
     if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
@@ -704,6 +644,16 @@ async def help(interaction: discord.Interaction):
     embed.set_author(name=client.user.name, icon_url=client.user.display_avatar)
 
     await interaction.response.send_message(embed=embed)
+
+@client.tree.command(guild=discord.Object(id=server_id), name='stop', description='Stops the bot')
+async def stop(interaction: discord.Interaction):
+    if interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message(embed=await helpers.embed_helper.create_success_embed('Bot Shutting Down...', await get_bot_color()))
+        await client.close()
+    else:
+        await interaction.response.send_message(
+            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
+        )
 
 async def is_cog_defined(cog):
     db.execute('SELECT * FROM cogs WHERE cog_name=?', (cog,))

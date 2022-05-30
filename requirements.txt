@@ -8,3 +8,4 @@ requests
 pokepy===0.4.0
 python-twitter
 discord
+python-dateutil

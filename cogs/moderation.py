@@ -79,17 +79,24 @@ class Moderation(commands.Cog):
         print('Moderation Module Loaded.')
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         if not message.author.bot and (message.type == discord.MessageType.default or message.type == discord.MessageType.reply):
             user_id = message.author.id
-            await add_msg(user_id, message.id, message.content, message.channel.name, message.channel.id,
+            message_content = message.content
+            if len(message.attachments) > 0:
+                if len(message_content) == 0:
+                    message_content = '(NONE)'
+                message_content += ' | attachments: '
+                for a in message.attachments:
+                    message_content += a.url
+
+            await add_msg(user_id, message.id, message_content, message.channel.name, message.channel.id,
                           message.created_at, 0)
             await delete_old_messages()
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, message):
         await set_deleted(message.message_id)
-        print(message.message_id)
 
     @commands.Cog.listener()
     async def on_member_ban(self, guild, user):

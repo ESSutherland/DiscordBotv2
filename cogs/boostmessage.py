@@ -58,6 +58,10 @@ class BoostMessage(commands.Cog):
                                                                       self.client.guilds[0].get_member(
                                                                           self.client.user.id).color)
             )
+        else:
+            await interaction.response.send_message(
+                embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
+            )
 
 
 async def setup(client):

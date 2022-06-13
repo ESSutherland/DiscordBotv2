@@ -88,7 +88,7 @@ class Moderation(commands.Cog):
                     message_content = '(NONE)'
                 message_content += ' | attachments: '
                 for a in message.attachments:
-                    message_content += a.url
+                    message_content += f'( {a.url} )'
 
             await add_msg(user_id, message.id, message_content, message.channel.name, message.channel.id,
                           message.created_at, 0)

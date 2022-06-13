@@ -97,6 +97,15 @@ class PokemonModule(commands.Cog):
     async def _pokemon(self, interaction: discord.Interaction, name_or_id: str):
         print(f'{interaction.user}({interaction.user.id}) executed Pokemon command.')
 
+        name_or_id = name_or_id.lower()
+        if ('.' in name_or_id) and (' ' in name_or_id):
+            name_or_id = name_or_id.replace('.', '',)
+            name_or_id = name_or_id.replace(' ', '-')
+        elif '.' in name_or_id:
+            name_or_id = name_or_id.replace('.', '-')
+        elif ' ' in name_or_id:
+            name_or_id = name_or_id.replace(' ', '-')
+
         embeds = []
 
         await interaction.response.send_message(embed=discord.Embed(

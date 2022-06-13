@@ -8,14 +8,13 @@ import cogs.colors
 import cogs.minecraft
 import math
 import asyncio
-import datetime
 import time
 import helpers.config
 
 from discord.ext import commands
 from importlib import import_module
 from discord.ui import Button, View
-from discord import app_commands, MemberCacheFlags
+from discord import app_commands
 from discord.app_commands import Choice
 from configparser import ConfigParser
 
@@ -280,7 +279,6 @@ async def setchannel(interaction: discord.Interaction, channel_name: str, channe
         await interaction.response.send_message(
             embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
         )
-
 
 db.execute('SELECT cog_name FROM cogs')
 results = db.fetchall()

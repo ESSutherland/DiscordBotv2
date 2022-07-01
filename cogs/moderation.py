@@ -19,6 +19,9 @@ from discord import app_commands
 connection = sqlite3.connect("./db/logs.db")
 db = connection.cursor()
 
+connection2 = sqlite3.connect("./db/config.db")
+db2 = connection2.cursor()
+
 server_id = helpers.config.server_id
 
 description = 'Tools and commands to be used by moderators of the server.'
@@ -74,7 +77,10 @@ class Moderation(commands.Cog):
         table_string = 'CREATE TABLE IF NOT EXISTS punishments (uuid text unique, user_id text, type text, time_sent text, reason text, given_by text)'
         db.execute(table_string)
 
+        db2.execute('CREATE TABLE IF NOT EXISTS banned_names(username text unique)')
+
         connection.commit()
+        connection2.commit()
 
         print('Moderation Module Loaded.')
 
@@ -339,6 +345,97 @@ class Moderation(commands.Cog):
                 await interaction.response.send_message(
                     embed=await helpers.embed_helper.create_error_embed('Not a valid punishment UUID')
                 )
+        else:
+            await interaction.response.send_message(
+                embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
+            )
+
+    @app_commands.command(name='lookup', description='Lookup a discord user via user ID.')
+    async def lookup(self, interaction: discord.Interaction, user_id: str):
+        if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
+            print(f'{interaction.user}({interaction.user.id}) executed Lookup command.')
+            try:
+                user = await self.client.fetch_user(int(user_id))
+                embed = discord.Embed(
+                    color=interaction.guild.get_member(self.client.user.id).color,
+                    description=user.mention
+                )
+                embed.set_author(name=str(user), icon_url=user.display_avatar)
+                embed.set_thumbnail(url=user.display_avatar)
+                created_at = user.created_at
+
+                embed.add_field(
+                    name='Registered',
+                    value=created_at.strftime('%a, %b %d, %Y %I:%M %p'),
+                    inline=True
+                )
+
+                await interaction.response.send_message(
+                    embed=embed
+                )
+            except:
+                await interaction.response.send_message(
+                    embed=await helpers.embed_helper.create_error_embed(f'`{user_id}` is not a valid Discord user ID.'))
+        else:
+            await interaction.response.send_message(
+                embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
+            )
+
+    @app_commands.command(name='massban', description='Ban multiple users from the server using a username.')
+    async def massban(self, interaction: discord.Interaction, username: str, reason: str = ''):
+        if await helpers.role_helper.has_role(interaction.guild, interaction.user.id,
+                                              'mod') or interaction.user.guild_permissions.administrator:
+            print(f'{interaction.user}({interaction.user.id}) executed Mass Ban command.')
+            members = await interaction.guild.query_members(query=f'{username}')
+            ban_reason = f'{interaction.user.name}: {reason}'
+
+            for m in members:
+                user = self.client.get_user(m.id)
+                await interaction.guild.ban(user=user, delete_message_days=1, reason=ban_reason)
+                embed = discord.Embed(
+                    title='User Banned!',
+                    color=interaction.guild.get_member(self.client.user.id).color,
+                    description=f'{interaction.user.mention} banned {user}.'
+                )
+                embed.set_author(name=str(user), icon_url=user.display_avatar)
+                if len(reason) > 0:
+                    embed.add_field(name='Reason', value=reason, inline=False)
+                embed.set_footer(text=f'Discord ID: {user.id}')
+                if await helpers.channel_helper.is_channel_defined('mod'):
+                    channel = interaction.guild.get_channel(await helpers.channel_helper.get_channel_id('mod'))
+                    await channel.send(embed=embed)
+        else:
+            await interaction.response.send_message(
+                embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
+            )
+
+    @app_commands.command(name='autoban', description='Add a username to a list that will be auto banned upon joining the server.')
+    async def autoban(self, interaction: discord.Interaction, username: str):
+        if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
+            print(f'{interaction.user}({interaction.user.id}) executed Auto Ban command.')
+            db2.execute('INSERT INTO banned_names VALUES (?)', (username,))
+            connection2.commit()
+            embed = await helpers.embed_helper.create_success_embed(
+                f'`{username}` Added To Auto-Ban List.',
+                interaction.guild.get_member(self.client.user.id).color
+            )
+            await interaction.response.send_message(embed=embed)
+        else:
+            await interaction.response.send_message(
+                embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
+            )
+
+    @app_commands.command(name='unautoban', description='Remove a username form the auto ban list.')
+    async def unautoban(self, interaction: discord.Interaction, username: str):
+        if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
+            print(f'{interaction.user}({interaction.user.id}) executed Un-Auto Ban Name command.')
+            db2.execute('DELETE FROM banned_names WHERE username=?', (username,))
+            connection2.commit()
+            embed = await helpers.embed_helper.create_success_embed(
+                f'`{username}` Removed From Auto-Ban List.',
+                interaction.guild.get_member(self.client.user.id).color
+            )
+            await interaction.response.send_message(embed=embed)
         else:
             await interaction.response.send_message(
                 embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')

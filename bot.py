@@ -45,7 +45,6 @@ cfg.read('config.ini')
 async def on_ready():
     db.execute('CREATE TABLE IF NOT EXISTS roles(role_name text unique, role_id integer)')
     db.execute('CREATE TABLE IF NOT EXISTS channels(channel_name text unique, channel_id integer)')
-    db.execute('CREATE TABLE IF NOT EXISTS banned_names(username text unique)')
     connection.commit()
 
     await client.change_presence(
@@ -76,7 +75,7 @@ async def on_member_join(member):
     for n in data[0]:
         if member.name == n:
             await client.guilds[0].ban(user=client.get_user(member.id), delete_message_days=1,
-                                       reason='Spam Bot Auto Ban')
+                                       reason='Auto Ban')
             break
 
     if member.pending is False:
@@ -524,99 +523,12 @@ async def whois(interaction: discord.Interaction, user: discord.Member):
         embed=embed
     )
 
-@client.tree.command(guild=discord.Object(id=server_id), name='lookup', description='Lookup a discord user via user ID.')
-async def lookup(interaction: discord.Interaction, user_id: str):
-    if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
-        print(f'{interaction.user}({interaction.user.id}) executed Lookup command.')
-        try:
-            user = await client.fetch_user(int(user_id))
-            embed = discord.Embed(
-                color=await get_bot_color(),
-                description=user.mention
-            )
-            embed.set_author(name=str(user), icon_url=user.display_avatar)
-            embed.set_thumbnail(url=user.display_avatar)
-            created_at = user.created_at
-
-            embed.add_field(
-                name='Registered',
-                value=created_at.strftime('%a, %b %d, %Y %I:%M %p'),
-                inline=True
-            )
-
-            await interaction.response.send_message(
-                embed=embed
-            )
-        except:
-            await interaction.response.send_message(embed=await helpers.embed_helper.create_error_embed(f'`{user_id}` is not a valid Discord user ID.'))
-    else:
-        await interaction.response.send_message(
-            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
-        )
-
-@client.tree.command(guild=discord.Object(id=server_id), name='massban', description='Ban multiple users from the server using a username.')
-async def massban(interaction: discord.Interaction, username: str, reason: str = ''):
-    if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
-        print(f'{interaction.user}({interaction.user.id}) executed Mass Ban command.')
-        members = await interaction.guild.query_members(query=f'{username}')
-        ban_reason = f'{interaction.user.name}: {reason}'
-
-        for m in members:
-            user = client.get_user(m.id)
-            await interaction.guild.ban(user=user, delete_message_days=1, reason=ban_reason)
-            embed = discord.Embed(
-                title='User Banned!',
-                color=await get_bot_color(),
-                description=f'{interaction.user.mention} banned {user}.'
-            )
-            embed.set_author(name=str(user), icon_url=user.display_avatar)
-            if len(reason) > 0:
-                embed.add_field(name='Reason', value=reason, inline=False)
-            embed.set_footer(text=f'Discord ID: {user.id}')
-            if await helpers.channel_helper.is_channel_defined('mod'):
-                channel = interaction.guild.get_channel(await helpers.channel_helper.get_channel_id('mod'))
-                await channel.send(embed=embed)
-    else:
-        await interaction.response.send_message(
-            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
-        )
-
-@client.tree.command(guild=discord.Object(id=server_id), name='autoban', description='Add a username to a list that will be auto banned upon joining the server.')
-async def autoban(interaction: discord.Interaction, username: str):
-    if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
-        print(f'{interaction.user}({interaction.user.id}) executed Auto Ban command.')
-        db.execute('INSERT INTO banned_names VALUES (?)', (username,))
-        connection.commit()
-        embed = await helpers.embed_helper.create_success_embed(
-            f'`{username}` Added To Auto-Ban List.',
-            await get_bot_color()
-        )
-        await interaction.response.send_message(embed=embed)
-    else:
-        await interaction.response.send_message(
-            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
-        )
-
-@client.tree.command(guild=discord.Object(id=server_id), name='unautoban', description='Remove a username form the auto ban list.')
-async def unautoban(interaction: discord.Interaction, username: str):
-    if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
-        print(f'{interaction.user}({interaction.user.id}) executed Un-Auto Ban Name command.')
-        db.execute('DELETE FROM banned_names WHERE username=?', (username,))
-        connection.commit()
-        embed = await helpers.embed_helper.create_success_embed(
-            f'`{username}` Removed From Auto-Ban List.',
-            await get_bot_color()
-        )
-        await interaction.response.send_message(embed=embed)
-    else:
-        await interaction.response.send_message(
-            embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command.')
-        )
-
 @client.tree.command(guild=discord.Object(id=server_id), name='help', description='Get information about commands.')
 async def help(interaction: discord.Interaction):
     print(f'{interaction.user}({interaction.user.id}) executed Help command.')
     url = f'https://essutherland.github.io/bot-site/?&bot_name={client.user.name}'
+    if await is_cog_enabled('moderation'):
+        url += '&moderation=1'
     if await is_cog_enabled('animalcrossing'):
         url += '&animalcrossing=1'
     if await is_cog_enabled('colors'):

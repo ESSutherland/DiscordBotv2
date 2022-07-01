@@ -124,7 +124,7 @@ class Moderation(commands.Cog):
                 ban_giver = log.user
             if not ban_giver.bot:
                 await add_punishment(punish_id, user.id, 'ban', datetime.now(timezone.utc), reason, ban_giver.id)
-                await channel.send(embed=await ban_embed(punish_id, user, ban_giver, reason, guild.get_member(self.client.user).color))
+                await channel.send(embed=await ban_embed(punish_id, user, ban_giver, reason, guild.get_member(self.client.user.id).color))
 
     @app_commands.command(name='logs', description='Get message logs of a specified user via Discord ID')
     async def logs(self, interaction: discord.Interaction, user_id: str):

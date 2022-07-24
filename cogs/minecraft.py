@@ -83,17 +83,63 @@ class Minecraft(commands.Cog):
                     )
                 )
 
-    @app_commands.command(name='setrcon', description='Used to set up the RCON information of the Minecraft server.')
-    async def set_rcon(self, interaction: discord.Interaction, rcon_ip: str, rcon_port: str, rcon_password: str):
+    @app_commands.command(name='addrcon', description='Used to set up RCON information of a Minecraft server.')
+    async def add_rcon(self, interaction: discord.Interaction, rcon_ip: str, rcon_port: str, rcon_password: str):
         if interaction.user.guild_permissions.administrator:
-            print(f'{interaction.user}({interaction.user.id}) executed SetRCON command.')
+            print(f'{interaction.user}({interaction.user.id}) executed AddRCON command.')
 
-            await set_rcon(rcon_ip, rcon_port, rcon_password)
+            await add_rcon(rcon_ip, rcon_port, rcon_password)
             await interaction.response.send_message(
                 embed=await helpers.embed_helper.create_success_embed(
                     'RCON Info Set.',
                     interaction.guild.get_member(self.client.user.id).color
                 )
+            )
+
+    @app_commands.command(name='delrcon', description='Used to remove RCON information of a Minecraft server.')
+    async def del_rcon(self, interaction: discord.Interaction, rcon_ip: str):
+        if interaction.user.guild_permissions.administrator and await is_rcon(rcon_ip):
+            print(f'{interaction.user}({interaction.user.id}) executed DelRCON command.')
+
+            await remove_rcon(rcon_ip)
+            await interaction.response.send_message(
+                embed=await helpers.embed_helper.create_success_embed(
+                    'RCON Info Removed.',
+                    interaction.guild.get_member(self.client.user.id).color
+                )
+            )
+
+    @app_commands.command(name='listrcon', description='Used to get the RCON information of the Minecraft servers.')
+    async def list_rcon(self, interaction: discord.Interaction):
+        if interaction.user.guild_permissions.administrator:
+            print(f'{interaction.user}({interaction.user.id}) executed ListRCON command.')
+            embed = discord.Embed(
+                title='RCON Connections',
+                color=interaction.guild.get_member(self.client.user.id).color
+            )
+            rcon_list = await get_rcon()
+
+            for rcon in rcon_list:
+                embed.add_field(
+                    name='\u200b',
+                    value=f'{rcon[0]}',
+                    inline=True
+                )
+
+                embed.add_field(
+                    name='\u200b',
+                    value=f'{rcon[1]}',
+                    inline=True
+                )
+
+                embed.add_field(
+                    name='\u200b',
+                    value=f'{rcon[2]}',
+                    inline=True
+                )
+
+            await interaction.response.send_message(
+                embed=embed
             )
 
     @whitelist.error
@@ -125,47 +171,56 @@ async def get_mc_username(user_id):
     return row[0]
 
 async def whitelist_add_user(user_id, username):
-    rcon: tuple = await get_rcon()
-    mcr = MCRcon(host=rcon[0], port=int(rcon[1]), password=rcon[2])
-    mcr.connect()
+    for rcon in await get_rcon():
+        mcr = MCRcon(host=rcon[0], port=int(rcon[1]), password=rcon[2])
+        mcr.connect()
+
+        if await has_whitelist(user_id):
+            rcon_response = mcr.command(f'whitelist remove {await get_mc_username(user_id)}')
+            print(rcon_response)
+
+        rcon_response = mcr.command(f'whitelist add {username}')
+        print(rcon_response)
+        mcr.disconnect()
 
     if await has_whitelist(user_id):
-        rcon_response = mcr.command(f'whitelist remove {await get_mc_username(user_id)}')
-        print(rcon_response)
         db.execute('UPDATE minecraft_users SET mc_username=? WHERE user_id=?', (username, user_id))
     else:
         db.execute('INSERT INTO minecraft_users VALUES(?,?)', (user_id, username))
     connection.commit()
 
-    rcon_response = mcr.command(f'whitelist add {username}')
-    print(rcon_response)
-    mcr.disconnect()
-
 async def whitelist_remove_user(user_id):
-    rcon: tuple = await get_rcon()
-    mcr = MCRcon(host=rcon[0], port=int(rcon[1]), password=rcon[2])
+    for rcon in await get_rcon():
+        mcr = MCRcon(host=rcon[0], port=int(rcon[1]), password=rcon[2])
 
-    mcr.connect()
-    rcon_response = mcr.command(f'whitelist remove {await get_mc_username(user_id)}')
-    print(rcon_response)
-    mcr.disconnect()
+        mcr.connect()
+        rcon_response = mcr.command(f'whitelist remove {await get_mc_username(user_id)}')
+        print(rcon_response)
+        mcr.disconnect()
 
     db.execute('DELETE FROM minecraft_users WHERE user_id=?', (user_id,))
     connection.commit()
 
-async def set_rcon(rcon_ip, rcon_port, rcon_password):
-    db.execute('SELECT * FROM minecraft_rcon')
+async def add_rcon(rcon_ip, rcon_port, rcon_password):
+    db.execute('INSERT INTO minecraft_rcon VALUES(?,?,?)', (rcon_ip, rcon_port, rcon_password))
+    connection.commit()
+
+async def remove_rcon(rcon_ip):
+    db.execute('DELETE FROM minecraft_rcon WHERE server_ip=?', (rcon_ip,))
+    connection.commit()
+
+async def is_rcon(rcon_ip):
+    db.execute('SELECT * FROM minecraft_rcon WHERE server_ip=?', (rcon_ip,))
     row = db.fetchone()
 
     if row is not None:
-        db.execute('UPDATE minecraft_rcon SET server_ip=?, port=?, password=? WHERE server_ip=?', (rcon_ip, rcon_port, rcon_password, row[0]))
+        return True
     else:
-        db.execute('INSERT INTO minecraft_rcon VALUES(?,?,?)', (rcon_ip, rcon_port, rcon_password))
-    connection.commit()
+        return False
 
 async def get_rcon():
     db.execute('SELECT * FROM minecraft_rcon')
-    row = db.fetchone()
+    row = db.fetchall()
 
     return row
 

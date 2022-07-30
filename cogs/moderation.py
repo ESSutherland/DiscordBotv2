@@ -173,7 +173,7 @@ class Moderation(commands.Cog):
 
                         if j == messages_per_page * (i - 1):
                             msg_string: str = messages[j][2]
-                            embed.add_field(name='Message', value=(msg_string[0:100]+'...' if (len(msg_string) > 200) else msg_string), inline=True)
+                            embed.add_field(name='Message', value=(msg_string[0:120]+'...' if (len(msg_string) > 200) else msg_string), inline=True)
                             embed.add_field(name='Time', value=f'<t:{ep}>', inline=True)
                             embed.add_field(name='Message Status/Channel', value=f'{deleted}   -   {channel}', inline=True)
                         else:

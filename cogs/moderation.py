@@ -309,7 +309,7 @@ class Moderation(commands.Cog):
                 embed = discord.Embed(
                     title='Info On Punishment',
                     color=interaction.guild.get_member(self.client.user.id).color,
-                    description=f'{get_type_string(punish_data[2])} on {user}'
+                    description=f'{get_type_string(punish_data[2])} on {user.mention}({user})'
                 )
                 embed.add_field(name='Given By', value=interaction.guild.get_member(int(punish_data[5])).mention, inline=True)
                 t = datetime.fromisoformat(punish_data[3]).utctimetuple()

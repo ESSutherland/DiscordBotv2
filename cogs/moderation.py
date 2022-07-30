@@ -305,11 +305,11 @@ class Moderation(commands.Cog):
             print(f'{interaction.user}({interaction.user.id}) executed Punishment command.')
             punish_data = await get_punishment(punishment_uuid)
             if punish_data is not None:
-
+                user = await self.client.fetch_user(int(punish_data[1]))
                 embed = discord.Embed(
                     title='Info On Punishment',
                     color=interaction.guild.get_member(self.client.user.id).color,
-                    description=f'{get_type_string(punish_data[2])} on {await self.client.fetch_user(int(punish_data[1])).mention}'
+                    description=f'{get_type_string(punish_data[2])} on {user}'
                 )
                 embed.add_field(name='Given By', value=interaction.guild.get_member(int(punish_data[5])).mention, inline=True)
                 t = datetime.fromisoformat(punish_data[3]).utctimetuple()

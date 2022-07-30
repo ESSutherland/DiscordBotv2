@@ -173,11 +173,12 @@ class Moderation(commands.Cog):
 
                         if j == messages_per_page * (i - 1):
                             msg_string: str = messages[j][2]
-                            embed.add_field(name='Message', value=(msg_string[0:100]+'...' if (len(msg_string) > 100) else msg_string), inline=True)
+                            embed.add_field(name='Message', value=(msg_string[0:200]+'...' if (len(msg_string) > 200) else msg_string), inline=True)
                             embed.add_field(name='Time', value=f'<t:{ep}>', inline=True)
                             embed.add_field(name='Message Status/Channel', value=f'{deleted}   -   {channel}', inline=True)
                         else:
-                            embed.add_field(name='\u200b', value=messages[j][2], inline=True)
+                            msg_string: str = messages[j][2]
+                            embed.add_field(name='\u200b', value=(msg_string[0:200]+'...' if (len(msg_string) > 200) else msg_string), inline=True)
                             embed.add_field(name='\u200b', value=f'<t:{ep}>', inline=True)
                             embed.add_field(name='\u200b', value=f'{deleted}   -   {channel}', inline=True)
                     if total_pages > 1:

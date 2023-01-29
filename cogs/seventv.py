@@ -44,7 +44,7 @@ class SevenTV(commands.Cog):
                     message=f'Emote `{r_json.get("name")}` has been added to the server!',
                     color=interaction.guild.get_member(self.client.user.id).color))
             except AttributeError as e:
-                print(e.__traceback__)
+                print(e.__traceback__.tb_lineno)
                 await interaction.response.send_message(
                     embed=await helpers.embed_helper.create_error_embed(f'`{emote_id}` is not a valid emote id.'))
 

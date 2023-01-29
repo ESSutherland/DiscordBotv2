@@ -36,7 +36,7 @@ class SevenTV(commands.Cog):
                 image = Image.open(requests.get(emote_url, stream=True, verify=False).raw)
                 buf = io.BytesIO()
                 if r_json.get('animated'):
-                    image.save(buf, 'gif', save_all=True, disposal=2, loop=0, background=None, transparency=0)
+                    image.save(buf, 'gif', save_all=True, disposal=2, loop=0, background=None)
                 else:
                     image.save(buf, 'png')
                 await interaction.guild.create_custom_emoji(name=r_json.get("name"), image=buf.getvalue())

@@ -4,6 +4,7 @@ import helpers.config
 import helpers.embed_helper
 import requests
 import discord
+
 from PIL import Image
 
 from discord.ext import commands
@@ -14,6 +15,7 @@ server_id = helpers.config.server_id
 
 url = 'https://7tv.io/v3'
 
+requests.packages.urllib3.disable_warnings()
 
 class SevenTV(commands.Cog):
 
@@ -41,10 +43,13 @@ class SevenTV(commands.Cog):
                 await interaction.response.send_message(embed=await helpers.embed_helper.create_success_embed(
                     message=f'Emote `{r_json.get("name")}` has been added to the server!',
                     color=interaction.guild.get_member(self.client.user.id).color))
-            except AttributeError:
+            except AttributeError as e:
+                print(e)
                 await interaction.response.send_message(
                     embed=await helpers.embed_helper.create_error_embed(f'`{emote_id}` is not a valid emote id.'))
-            except:
+
+            except Exception as e:
+                print(e)
                 await interaction.response.send_message(
                     embed=await helpers.embed_helper.create_error_embed(f'Discord does not support this emote.'))
         else:

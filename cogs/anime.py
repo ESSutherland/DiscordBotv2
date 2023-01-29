@@ -71,9 +71,9 @@ class AnimeModule(commands.Cog):
             view = View()
             view.add_item(button)
 
-            await interaction.edit_original_message(embed=embed, view=view)
+            await interaction.edit_original_response(embed=embed, view=view)
         else:
-            await interaction.edit_original_message(embed=await helpers.embed_helper.create_error_embed(f'Could not find any anime similar to {params}'))
+            await interaction.edit_original_response(embed=await helpers.embed_helper.create_error_embed(f'Could not find any anime similar to {params}'))
 
     @app_commands.command(name='manga', description='Display info about a specified manga (via MyAnimeList).')
     async def manga(self, interaction: discord.Interaction, params: str):
@@ -124,9 +124,9 @@ class AnimeModule(commands.Cog):
             view = View()
             view.add_item(button)
 
-            await interaction.edit_original_message(embed=embed, view=view)
+            await interaction.edit_original_response(embed=embed, view=view)
         else:
-            await interaction.edit_original_message(embed=await helpers.embed_helper.create_error_embed(f'Could not find any manga similar to {params}'))
+            await interaction.edit_original_response(embed=await helpers.embed_helper.create_error_embed(f'Could not find any manga similar to {params}'))
 
 async def setup(client):
     await client.add_cog(AnimeModule(client), guild=discord.Object(id=server_id))

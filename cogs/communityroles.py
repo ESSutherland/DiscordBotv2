@@ -80,7 +80,7 @@ class CommunityRoles(commands.Cog):
                 embed = discord.Embed(
                     title='Community Watch Parties!',
                     description=f'React to this message with 🎥 to receive the {role.mention} role and be notified about Community Watch Party related messages! Remove your reaction at any time to remove the role from yourself.',
-                    color=self.client.guilds[0].get_member(self.client.user.id).color
+                    color=interaction.guild.get_member(self.client.user.id).color
                 )
                 message = await interaction.channel.send(embed=embed)
                 await interaction.delete_original_response()
@@ -88,6 +88,25 @@ class CommunityRoles(commands.Cog):
                 await message.add_reaction("🎥")
         else:
             await interaction.response.send(embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command'))
+
+    @app_commands.command(name='live', description='create a live notice role message')
+    async def live(self, interaction: discord.Interaction):
+        if interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message('✅')
+            if await helpers.role_helper.is_role_defined('live'):
+                role = interaction.guild.get_role(await helpers.role_helper.get_role_id('live'))
+                embed = discord.Embed(
+                    title='Live Notifications!',
+                    description=f'React to this message with 🔴 to receive the {role.mention} role and be notified when there is a stream! Remove your reaction at any time to remove the role from yourself.',
+                    color=self.client.guilds[0].get_member(self.client.user.id).color
+                )
+                message = await interaction.channel.send(embed=embed)
+                await interaction.delete_original_response()
+                set_message('movie', message.id)
+                await message.add_reaction("🔴")
+        else:
+            await interaction.response.send(embed=await helpers.embed_helper.create_error_embed(
+                'You do not have permission to use this command'))
 
 def set_message(name, message_id):
     if is_message_set(name):

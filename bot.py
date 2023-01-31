@@ -220,7 +220,7 @@ async def bot(interaction: discord.Interaction):
     print(f'{client.user}({client.user.id}) executed Bot command.')
 
 # SETROLE COMMAND #
-valid_roles = ['sub', 'booster', 'mod', 'user', 'movie', 'game']
+valid_roles = ['sub', 'booster', 'mod', 'user', 'movie', 'game', 'live']
 role_choices = []
 for r in valid_roles:
     role_choices.append(Choice(name=r, value=r))

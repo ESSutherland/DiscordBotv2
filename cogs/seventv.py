@@ -39,12 +39,17 @@ class SevenTV(commands.Cog):
 
                 file_list = r_json.get('host').get('files')
 
+                await interaction.response.send_message(embed=discord.Embed(
+                    title='Fetching Data...Please Wait.',
+                    color=self.client.guilds[0].get_member(self.client.user.id).color
+                ))
+
                 for i in reversed(range(0, len(file_list))):
                     if 'avif' in file_list[i].get('name'):
                         try:
                             file_name = file_list[i].get('name')
                             await interaction.guild.create_custom_emoji(name=r_json.get("name"), image=await get_emote(r_json, file_name))
-                            await interaction.response.send_message(embed=await helpers.embed_helper.create_success_embed(
+                            await interaction.edit_original_response(embed=await helpers.embed_helper.create_success_embed(
                                 message=f'Emote `{r_json.get("name")}` has been added to the server!',
                                 color=interaction.guild.get_member(self.client.user.id).color))
                             break
@@ -52,19 +57,19 @@ class SevenTV(commands.Cog):
                             if i > 0:
                                 continue
                             else:
-                                await interaction.response.send_message(
+                                await interaction.edit_original_response(
                                     embed=await helpers.embed_helper.create_error_embed(
-                                        f'Discord does not support this emote.'))
+                                        f'`{r_json.get("name")}` is too large for Discord.'))
 
             except AttributeError as e:
-                await interaction.response.send_message(
+                await interaction.edit_original_response(
                     embed=await helpers.embed_helper.create_error_embed(f'`{emote_id}` is not a valid emote id.'))
-
             except Exception as e:
-                await interaction.response.send_message(
-                    embed=await helpers.embed_helper.create_error_embed(f'Discord does not support this emote.'))
+                await interaction.edit_original_response(
+                    embed=await helpers.embed_helper.create_error_embed(f'An Error occurred: {e.__traceback__}')
+                )
         else:
-            await interaction.response.send_message(embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command'))
+            await interaction.edit_original_response(embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command'))
 
 
 async def get_emote(data, file):

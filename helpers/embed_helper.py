@@ -8,12 +8,14 @@ async def create_error_embed(error):
     )
     return embed
 
-async def create_success_embed(message, color):
+async def create_success_embed(message, color, image = None):
     embed = discord.Embed(
         title='Success!',
         color=color,
         description=str(message)
     )
+    if image:
+        embed.set_thumbnail(url=image)
     return embed
 
 async def create_color_success_embed(color_hex, color, user):

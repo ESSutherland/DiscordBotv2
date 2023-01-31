@@ -48,10 +48,11 @@ class SevenTV(commands.Cog):
                     if 'avif' in file_list[i].get('name'):
                         try:
                             file_name = file_list[i].get('name')
-                            await interaction.guild.create_custom_emoji(name=r_json.get("name"), image=await get_emote(r_json, file_name))
+                            emote = await interaction.guild.create_custom_emoji(name=r_json.get("name"), image=await get_emote(r_json, file_name))
                             await interaction.edit_original_response(embed=await helpers.embed_helper.create_success_embed(
                                 message=f'Emote `{r_json.get("name")}` has been added to the server!',
-                                color=interaction.guild.get_member(self.client.user.id).color))
+                                color=interaction.guild.get_member(self.client.user.id).color,
+                                image=emote.url))
                             break
                         except:
                             if i > 0:

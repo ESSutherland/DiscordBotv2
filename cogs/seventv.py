@@ -30,6 +30,7 @@ class SevenTV(commands.Cog):
     async def emote(self, interaction: discord.Interaction, emote_id: str):
         if interaction.user.guild_permissions.manage_emojis:
             print(f'{interaction.user}({interaction.user.id}) executed 7TV command.')
+            r_json = ''
             try:
                 r = requests.get(url=f'{url}/emotes/{emote_id}', verify=False)
                 r_json = r.json()

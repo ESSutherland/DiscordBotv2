@@ -37,6 +37,11 @@ class CommunityRoles(commands.Cog):
                 if str(message.id) == get_message('movie'):
                     role = self.client.guilds[0].get_role(await helpers.role_helper.get_role_id('movie'))
                     await payload.member.add_roles(role)
+        if is_message_set('live') and await helpers.role_helper.is_role_defined('live'):
+            if payload.emoji.name == "🔴" and not payload.member.bot:
+                if str(message.id) == get_message('live'):
+                    role = self.client.guilds[0].get_role(await helpers.role_helper.get_role_id('live'))
+                    await payload.member.add_roles(role)
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
@@ -51,6 +56,11 @@ class CommunityRoles(commands.Cog):
             if payload.emoji.name == "🎥" and not member.bot:
                 if str(message.id) == get_message('movie'):
                     role = self.client.guilds[0].get_role(await helpers.role_helper.get_role_id('movie'))
+                    await member.remove_roles(role)
+        if is_message_set('live') and await helpers.role_helper.is_role_defined('live'):
+            if payload.emoji.name == "🔴" and not member.bot:
+                if str(message.id) == get_message('live'):
+                    role = self.client.guilds[0].get_role(await helpers.role_helper.get_role_id('live'))
                     await member.remove_roles(role)
 
     @app_commands.command(name='game', description='create a game role message')
@@ -102,7 +112,7 @@ class CommunityRoles(commands.Cog):
                 )
                 message = await interaction.channel.send(embed=embed)
                 await interaction.delete_original_response()
-                set_message('movie', message.id)
+                set_message('live', message.id)
                 await message.add_reaction("🔴")
         else:
             await interaction.response.send(embed=await helpers.embed_helper.create_error_embed(

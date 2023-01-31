@@ -49,7 +49,12 @@ class SevenTV(commands.Cog):
                                 color=interaction.guild.get_member(self.client.user.id).color))
                             break
                         except:
-                            continue
+                            if i > 0:
+                                continue
+                            else:
+                                await interaction.response.send_message(
+                                    embed=await helpers.embed_helper.create_error_embed(
+                                        f'Discord does not support this emote.'))
 
             except AttributeError as e:
                 await interaction.response.send_message(

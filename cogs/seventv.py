@@ -1,12 +1,10 @@
 import io
-import os
 
 import helpers.config
 import helpers.embed_helper
 import requests
 import discord
 import pillow_avif
-import pathlib
 
 from PIL import Image
 

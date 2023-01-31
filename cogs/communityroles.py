@@ -1,13 +1,17 @@
 import discord
 import sqlite3
 import helpers.role_helper
+import helpers.config
+import helpers.embed_helper
 
 from discord.ext import commands
+from discord import app_commands
 
 connection = sqlite3.connect('./db/config.db')
 db = connection.cursor()
 
 description = 'Allows users to obtain roles that will help them get notified of community events.'
+server_id = helpers.config.server_id
 
 class CommunityRoles(commands.Cog):
 
@@ -49,35 +53,41 @@ class CommunityRoles(commands.Cog):
                     role = self.client.guilds[0].get_role(await helpers.role_helper.get_role_id('movie'))
                     await member.remove_roles(role)
 
-    @commands.command()
-    @commands.has_permissions(administrator=True)
-    async def game(self, ctx):
-        await ctx.message.delete()
-        if await helpers.role_helper.is_role_defined('game'):
-            role = self.client.guilds[0].get_role(await helpers.role_helper.get_role_id('game'))
-            embed = discord.Embed(
-                title='Community Games!',
-                description=f'React to this message with 🎮 to receive the {role.mention} role and be notified about Community Gaming related messages! Remove your reaction at any time to remove the role from yourself.',
-                color=self.client.guilds[0].get_member(self.client.user.id).color
-            )
-            message = await ctx.send(embed=embed)
-            set_message('game', message.id)
-            await message.add_reaction("🎮")
+    @app_commands.command(name='game', description='create a game role message')
+    async def game(self, interaction: discord.Interaction):
+        if interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message('✅')
+            if await helpers.role_helper.is_role_defined('game'):
+                role = interaction.guild.get_role(await helpers.role_helper.get_role_id('game'))
+                embed = discord.Embed(
+                    title='Community Games!',
+                    description=f'React to this message with 🎮 to receive the {role.mention} role and be notified about Community Gaming related messages! Remove your reaction at any time to remove the role from yourself.',
+                    color=self.client.guilds[0].get_member(self.client.user.id).color
+                )
+                message = await interaction.channel.send(embed=embed)
+                await interaction.delete_original_response()
+                set_message('game', message.id)
+                await message.add_reaction("🎮")
+        else:
+            await interaction.response.send_message(embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command'))
 
-    @commands.command()
-    @commands.has_permissions(administrator=True)
-    async def movie(self, ctx):
-        await ctx.message.delete()
-        if await helpers.role_helper.is_role_defined('movie'):
-            role = self.client.guilds[0].get_role(await helpers.role_helper.get_role_id('movie'))
-            embed = discord.Embed(
-                title='Community Movie Nights!',
-                description=f'React to this message with 🎥 to receive the {role.mention} role and be notified about Community Movie Night related messages! Remove your reaction at any time to remove the role from yourself.',
-                color=self.client.guilds[0].get_member(self.client.user.id).color
-            )
-            message = await ctx.send(embed=embed)
-            set_message('movie', message.id)
-            await message.add_reaction("🎥")
+    @app_commands.command(name='movie', description='create a watch party role message')
+    async def movie(self, interaction: discord.Interaction):
+        if interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message('✅')
+            if await helpers.role_helper.is_role_defined('movie'):
+                role = interaction.guild.get_role(await helpers.role_helper.get_role_id('movie'))
+                embed = discord.Embed(
+                    title='Community Watch Parties!',
+                    description=f'React to this message with 🎥 to receive the {role.mention} role and be notified about Community Watch Party related messages! Remove your reaction at any time to remove the role from yourself.',
+                    color=self.client.guilds[0].get_member(self.client.user.id).color
+                )
+                message = await interaction.channel.send(embed=embed)
+                await interaction.delete_original_response()
+                set_message('movie', message.id)
+                await message.add_reaction("🎥")
+        else:
+            await interaction.response.send(embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command'))
 
 def set_message(name, message_id):
     if is_message_set(name):
@@ -106,4 +116,4 @@ def is_message_set(name):
         return False
 
 async def setup(client):
-    await client.add_cog(CommunityRoles(client))
+    await client.add_cog(CommunityRoles(client), guild=discord.Object(id=server_id))

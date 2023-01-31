@@ -310,7 +310,7 @@ class Levels(commands.Cog):
         image_draw.text(xy=name_xy, text=user_desc.strip().replace('%', '  '), fill='white', font=font)
         image_draw.text(xy=(40, 190), text='Roles: ', font=label_font, fill='white')
         image_draw.text(xy=(40, 400), text=f'Level {await get_level(user.id)}', font=label_font, fill='white')
-        image_draw.text(xy=(40, 320), text=f'Joined: {user_joined.strftime("%a, %b %d, %Y")}', font=label_font,
+        image_draw.text(xy=(40, 350), text=f'Joined: {user_joined.strftime("%a, %b %d, %Y")}', font=label_font,
                         fill='white')
         image_draw.text(xy=(int((image_x / 2) - (guild_name_size[0] / 2)), 30), text=f'{interaction.guild.name}',
                         font=label_font, fill='white')

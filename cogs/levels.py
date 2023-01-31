@@ -115,11 +115,12 @@ class Levels(commands.Cog):
                     await set_exp(author_id, user_exp + (msg_exp * multiplier))
 
     @app_commands.command(name='level', description='Displays the current level of the mentioned user.')
-    async def level(self, interaction: discord.Interaction):
+    async def level(self, interaction: discord.Interaction, user: discord.User = None):
 
         print(f'{interaction.user}({interaction.user.id}) executed Level command.')
 
-        user = interaction.user
+        if not user:
+            user = interaction.user
         embed = discord.Embed(
             title=f'Rank: #{await get_rank(user.id) if await get_rank(user.id) > 0 else "N/A"}',
             description=f'Multiplier **{await get_multiplier(interaction.user, interaction.guild)}**',
@@ -230,22 +231,24 @@ class Levels(commands.Cog):
             )
 
     @app_commands.command(name='user', description='Get a graphical layout of user info.')
-    async def user(self, interaction: discord.Interaction):
-        author = interaction.user
+    async def user(self, interaction: discord.Interaction, user: discord.User = None):
 
-        print(f'{author}({author.id}) executed User command.')
+        print(f'{interaction.user}({interaction.user.id}) executed User command.')
+
+        if not user:
+            user = interaction.user
 
         name = ''
         emojis = []
-        for letter in author.name:
-            if letter in emoji.UNICODE_EMOJI.get('en'):
+        for letter in user.name:
+            if letter in emoji.EMOJI_DATA:
                 name += '%'
                 if 'MODIFIER' not in unicodedata.name(letter):
                     emojis.append(letter)
             else:
                 name += letter
 
-        user_desc = f'{name} #{author.discriminator}'
+        user_desc = f'{name} #{user.discriminator}'
 
         font_size = 1
         font = ImageFont.truetype('./images/fonts/Oleg Stepanov - SimpleStamp.otf', font_size)
@@ -270,7 +273,7 @@ class Levels(commands.Cog):
 
         image_draw = ImageDraw.Draw(im=bg_image)
 
-        avatar = Image.open(requests.get(author.display_avatar.url, stream=True).raw).convert('RGBA')
+        avatar = Image.open(requests.get(user.display_avatar.url, stream=True).raw).convert('RGBA')
         avatar = avatar.resize((200, 200))
         mask = Image.open('./images/levels/mask.png').convert('L')
         output = ImageOps.fit(avatar, mask.size, centering=(0.5, 0.5))
@@ -278,7 +281,7 @@ class Levels(commands.Cog):
 
         rect = Image.new('RGBA', (image_x - 50, image_y - 50), color=(0, 0, 0, 120))
 
-        user_exp = await get_exp(author.id)
+        user_exp = await get_exp(user.id)
         exp_bar = Image.new('RGBA', (450, 20), color=ImageColor.getrgb('#616161'))
         exp_bar_size = exp_bar.size
         user_exp_bar = Image.new('RGBA', (int(exp_bar_size[0] * (user_exp / level_exp)), 20),
@@ -286,7 +289,7 @@ class Levels(commands.Cog):
                                      str(self.client.guilds[0].get_member(self.client.user.id).color)))
         exp_bar.paste(user_exp_bar, (0, 0), user_exp_bar)
 
-        user_joined = author.joined_at
+        user_joined = user.joined_at
 
         bg_image.paste(rect, (25, 25), rect)
         bg_image.paste(output, (40, 40), output)
@@ -306,7 +309,7 @@ class Levels(commands.Cog):
 
         image_draw.text(xy=name_xy, text=user_desc.strip().replace('%', '  '), fill='white', font=font)
         image_draw.text(xy=(40, 190), text='Roles: ', font=label_font, fill='white')
-        image_draw.text(xy=(40, 400), text=f'Level {await get_level(author.id)}', font=label_font, fill='white')
+        image_draw.text(xy=(40, 400), text=f'Level {await get_level(user.id)}', font=label_font, fill='white')
         image_draw.text(xy=(40, 320), text=f'Joined: {user_joined.strftime("%a, %b %d, %Y")}', font=label_font,
                         fill='white')
         image_draw.text(xy=(int((image_x / 2) - (guild_name_size[0] / 2)), 30), text=f'{interaction.guild.name}',
@@ -318,7 +321,7 @@ class Levels(commands.Cog):
         last_role = None
         start_roles = (150, 200)
         role_x, role_y = start_roles
-        role_list = author.roles
+        role_list = user.roles
         role_list.reverse()
 
         for role in role_list:

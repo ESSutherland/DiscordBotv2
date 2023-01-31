@@ -33,14 +33,8 @@ class SevenTV(commands.Cog):
             try:
                 r = requests.get(url=f'{url}/emotes/{emote_id}', verify=False)
                 r_json = r.json()
-                emote_url = f'https:{r_json.get("host").get("url")}/4x.webp'
-                image = Image.open(requests.get(emote_url, stream=True, verify=False).raw)
-                buf = io.BytesIO()
-                if r_json.get('animated'):
-                    image.save(buf, 'gif', save_all=True, disposal=2, loop=0, background=None)
-                else:
-                    image.save(buf, 'png')
-                await interaction.guild.create_custom_emoji(name=r_json.get("name"), image=buf.getvalue())
+
+                await interaction.guild.create_custom_emoji(name=r_json.get("name"), image=await get_emote(r_json, '4x'))
                 await interaction.response.send_message(embed=await helpers.embed_helper.create_success_embed(
                     message=f'Emote `{r_json.get("name")}` has been added to the server!',
                     color=interaction.guild.get_member(self.client.user.id).color))
@@ -49,11 +43,35 @@ class SevenTV(commands.Cog):
                     embed=await helpers.embed_helper.create_error_embed(f'`{emote_id}` is not a valid emote id.'))
 
             except Exception as e:
-                await interaction.response.send_message(
-                    embed=await helpers.embed_helper.create_error_embed(f'Discord does not support this emote.'))
+                try:
+                    await interaction.guild.create_custom_emoji(name=r_json.get("name"), image=await get_emote(r_json, '3x'))
+                    await interaction.response.send_message(embed=await helpers.embed_helper.create_success_embed(
+                        message=f'Emote `{r_json.get("name")}` has been added to the server!',
+                        color=interaction.guild.get_member(self.client.user.id).color))
+                except Exception as e:
+                    try:
+                        await interaction.guild.create_custom_emoji(name=r_json.get("name"), image=await get_emote(r_json, '2x'))
+                        await interaction.response.send_message(embed=await helpers.embed_helper.create_success_embed(
+                            message=f'Emote `{r_json.get("name")}` has been added to the server!',
+                            color=interaction.guild.get_member(self.client.user.id).color))
+                    except Exception as e:
+                        await interaction.response.send_message(
+                            embed=await helpers.embed_helper.create_error_embed(
+                                f'Discord does not support this emote.'))
         else:
             await interaction.response.send_message(embed=await helpers.embed_helper.create_error_embed('You do not have permission to use this command'))
 
+
+async def get_emote(data, size):
+    emote_url = f'https:{data.get("host").get("url")}/{size}.webp'
+    image = Image.open(requests.get(emote_url, stream=True, verify=False).raw)
+    buf = io.BytesIO()
+    if data.get('animated'):
+        image.save(buf, 'gif', save_all=True, disposal=2, loop=0, background=None)
+    else:
+        image.save(buf, 'png')
+
+    return buf.getvalue()
 
 async def setup(client):
     await client.add_cog(SevenTV(client), guild=discord.Object(id=server_id))

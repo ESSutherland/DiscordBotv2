@@ -374,7 +374,6 @@ class ModuleView(View):
         self.add_item(self.prev_button)
         self.add_item(self.next_button)
         self.disable_buttons()
-        print(self.embeds)
 
     async def button_callback(self, interaction: discord.Interaction):
         button_id = interaction.data['custom_id']
@@ -413,9 +412,9 @@ async def modules(interaction: discord.Interaction):
         for j in range(1, total_pages + 1):
             embed = discord.Embed(
                 color=await get_bot_color(),
-                title='--------------------------------------------------------------------------------------'
+                title='-------------------------------------------------------------------------'
             )
-            embed.set_author(icon_url=client.user.display_avatar, name='Modules')
+            embed.set_author(icon_url=client.user.display_avatar, name=f'Modules for {interaction.guild.name}')
             for i in range((modules_per_page * (j - 1)), min((modules_per_page * j), len(module_list))):
                 module_status = 'Enabled' if bool(int(module_list[i][1])) else 'Disabled'
                 if i == modules_per_page * (j - 1):
@@ -548,6 +547,8 @@ async def help(interaction: discord.Interaction):
         url += '&anime=1'
     if await is_cog_enabled('pokemon'):
         url += '&pokemon=1'
+    if await is_cog_enabled('seventv'):
+        url += '&7tv=1'
 
     embed = discord.Embed(
         colour=await get_bot_color(),

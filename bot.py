@@ -462,8 +462,11 @@ async def status(interaction: discord.Interaction, message: str):
         )
 
 @client.tree.command(guild=discord.Object(id=server_id), name='whois', description='Get information about the user.')
-async def whois(interaction: discord.Interaction, user: discord.Member):
+async def whois(interaction: discord.Interaction, user: discord.Member = None):
     print(f'{interaction.user}({interaction.user.id}) executed WhoIs command.')
+
+    if not user:
+        user = interaction.user
 
     embed = discord.Embed(
         description=user.mention,

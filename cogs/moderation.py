@@ -135,7 +135,7 @@ class Moderation(commands.Cog):
     @app_commands.command(name='logs', description='Get message logs of a specified user via Discord ID')
     async def logs(self, interaction: discord.Interaction, user_id: str):
         if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
-            print(f'{interaction.user}({interaction.user.id}) executed Logs command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed Logs command.')
             embeds = []
 
             messages = await get_messages(user_id)
@@ -151,7 +151,7 @@ class Moderation(commands.Cog):
                         user = await self.client.fetch_user(int(user_id))
 
                     embed = discord.Embed(
-                        title=f'Messages From {user}',
+                        title=f'Messages From {user.name}',
                         color=interaction.guild.get_member(self.client.user.id).color
                     )
                     number = min((messages_per_page * i), len(messages))
@@ -203,7 +203,7 @@ class Moderation(commands.Cog):
     @app_commands.command(name='warn', description='Give user a warning')
     async def warn(self, interaction: discord.Interaction, user: discord.User, reason: str = ''):
         if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
-            print(f'{interaction.user}({interaction.user.id}) executed Warn command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed Warn command.')
             punish_id = str(uuid.uuid4())
             await add_punishment(punish_id, user.id, 'warn', datetime.now(timezone.utc), reason, interaction.user.id)
 
@@ -226,7 +226,7 @@ class Moderation(commands.Cog):
     @app_commands.command(name='ban', description='Ban a user from the server using their discord ID.')
     async def ban(self, interaction: discord.Interaction, user_id: str, reason: str = ''):
         if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
-            print(f'{interaction.user}({interaction.user.id}) executed Ban command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed Ban command.')
             user = None
             try:
                 user = await self.client.fetch_user(int(user_id))
@@ -255,9 +255,9 @@ class Moderation(commands.Cog):
     @app_commands.command(name='standing', description='returns a list of punishments on a user and their warning points.')
     async def standing(self, interaction: discord.Interaction, user: discord.User):
         if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
-            print(f'{interaction.user}({interaction.user.id}) executed Standing command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed Standing command.')
             embed = discord.Embed(
-                title=f'Standing for {user}',
+                title=f'Standing for {user.name}',
                 color=interaction.guild.get_member(self.client.user.id).color,
                 description=f'Current Warning Points: {await get_warn_points(user.id)}'
             )
@@ -304,14 +304,14 @@ class Moderation(commands.Cog):
     @app_commands.command(name='punishment', description='Get information on a punishment via UUID')
     async def punishment(self, interaction: discord.Interaction, punishment_uuid: str):
         if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
-            print(f'{interaction.user}({interaction.user.id}) executed Punishment command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed Punishment command.')
             punish_data = await get_punishment(punishment_uuid)
             if punish_data is not None:
                 user = await self.client.fetch_user(int(punish_data[1]))
                 embed = discord.Embed(
                     title='Info On Punishment',
                     color=interaction.guild.get_member(self.client.user.id).color,
-                    description=f'{get_type_string(punish_data[2])} on {user.mention}({user} - {user.id})'
+                    description=f'{get_type_string(punish_data[2])} on {user.mention}({user.name} - {user.id})'
                 )
                 embed.add_field(name='Given By', value=interaction.guild.get_member(int(punish_data[5])).mention, inline=True)
                 t = datetime.fromisoformat(punish_data[3]).utctimetuple()
@@ -337,7 +337,7 @@ class Moderation(commands.Cog):
     @app_commands.command(name='remove', description='Remove a punishment from a user via UUID')
     async def remove(self, interaction: discord.Interaction, punishment_uuid: str):
         if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
-            print(f'{interaction.user}({interaction.user.id}) executed Remove command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed Remove command.')
             if await get_punishment(punishment_uuid):
                 await remove_punishment(punishment_uuid)
                 await interaction.response.send_message(
@@ -362,7 +362,7 @@ class Moderation(commands.Cog):
                     color=interaction.guild.get_member(self.client.user.id).color,
                     description=user.mention
                 )
-                embed.set_author(name=str(user), icon_url=user.display_avatar)
+                embed.set_author(name=str(user.name), icon_url=user.display_avatar)
                 embed.set_thumbnail(url=user.display_avatar)
                 created_at = user.created_at
 
@@ -387,7 +387,7 @@ class Moderation(commands.Cog):
     async def massban(self, interaction: discord.Interaction, username: str, reason: str = ''):
         if await helpers.role_helper.has_role(interaction.guild, interaction.user.id,
                                               'mod') or interaction.user.guild_permissions.administrator:
-            print(f'{interaction.user}({interaction.user.id}) executed Mass Ban command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed Mass Ban command.')
             members = await interaction.guild.query_members(query=f'{username}')
             ban_reason = f'{interaction.user.name}: {reason}'
 
@@ -414,7 +414,7 @@ class Moderation(commands.Cog):
     @app_commands.command(name='autoban', description='Add a username to a list that will be auto banned upon joining the server.')
     async def autoban(self, interaction: discord.Interaction, username: str):
         if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
-            print(f'{interaction.user}({interaction.user.id}) executed Auto Ban command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed Auto Ban command.')
             db2.execute('INSERT INTO banned_names VALUES (?)', (username,))
             connection2.commit()
             embed = await helpers.embed_helper.create_success_embed(
@@ -430,7 +430,7 @@ class Moderation(commands.Cog):
     @app_commands.command(name='unautoban', description='Remove a username form the auto ban list.')
     async def unautoban(self, interaction: discord.Interaction, username: str):
         if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
-            print(f'{interaction.user}({interaction.user.id}) executed Un-Auto Ban Name command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed Un-Auto Ban Name command.')
             db2.execute('DELETE FROM banned_names WHERE username=?', (username,))
             connection2.commit()
             embed = await helpers.embed_helper.create_success_embed(
@@ -495,9 +495,9 @@ async def ban_embed(punish_id, user, ban_giver, reason, color):
     embed = discord.Embed(
         title='User Banned!',
         color=color,
-        description=f'{ban_giver.mention} banned {user}.'
+        description=f'{ban_giver.mention} banned {user.name}.'
     )
-    embed.set_author(name=f'{str(user)} ({user.id})', icon_url=user.display_avatar)
+    embed.set_author(name=f'{str(user.name)} ({user.id})', icon_url=user.display_avatar)
 
     if len(reason) > 0:
         embed.add_field(name='Reason', value=reason, inline=False)

@@ -31,7 +31,7 @@ class AnimalCrossing(commands.Cog):
 
     @app_commands.command(name='villager', description='Get information about the specified Animal Crossing: New Horizons villager.')
     async def villager(self, interaction: discord.Interaction, villager_name: str):
-        print(f'{interaction.user}({interaction.user.id}) executed Villager command.')
+        print(f'{interaction.user.name}({interaction.user.id}) executed Villager command.')
         if await is_villager(villager_name):
             villager = await get_villager_data(villager_name)
             box_color = '#ded9c6'

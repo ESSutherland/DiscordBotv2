@@ -49,7 +49,7 @@ class Minecraft(commands.Cog):
     async def whitelist(self, interaction: discord.Interaction, username: str):
         author = interaction.user
         if await helpers.role_helper.has_role(interaction.guild, author.id, 'sub') or await helpers.role_helper.has_role(interaction.guild, author.id, 'mod'):
-            print(f'{author}({author.id}) executed Whitelist command.')
+            print(f'{author.name}({author.id}) executed Whitelist command.')
 
             if await is_rcon_enabled():
                 if await helpers.role_helper.is_role_defined('sub'):
@@ -86,7 +86,7 @@ class Minecraft(commands.Cog):
     @app_commands.command(name='addrcon', description='Used to set up RCON information of a Minecraft server.')
     async def add_rcon(self, interaction: discord.Interaction, rcon_ip: str, rcon_port: str, rcon_password: str):
         if interaction.user.guild_permissions.administrator:
-            print(f'{interaction.user}({interaction.user.id}) executed AddRCON command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed AddRCON command.')
 
             await add_rcon(rcon_ip, rcon_port, rcon_password)
             await interaction.response.send_message(
@@ -99,7 +99,7 @@ class Minecraft(commands.Cog):
     @app_commands.command(name='delrcon', description='Used to remove RCON information of a Minecraft server.')
     async def del_rcon(self, interaction: discord.Interaction, rcon_ip: str):
         if interaction.user.guild_permissions.administrator and await is_rcon(rcon_ip):
-            print(f'{interaction.user}({interaction.user.id}) executed DelRCON command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed DelRCON command.')
 
             await remove_rcon(rcon_ip)
             await interaction.response.send_message(
@@ -112,7 +112,7 @@ class Minecraft(commands.Cog):
     @app_commands.command(name='listrcon', description='Used to get the RCON information of the Minecraft servers.')
     async def list_rcon(self, interaction: discord.Interaction):
         if interaction.user.guild_permissions.administrator:
-            print(f'{interaction.user}({interaction.user.id}) executed ListRCON command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed ListRCON command.')
             embed = discord.Embed(
                 title='RCON Connections',
                 color=interaction.guild.get_member(self.client.user.id).color

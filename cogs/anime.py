@@ -21,7 +21,7 @@ class AnimeModule(commands.Cog):
 
     @app_commands.command(name='anime', description='Display info about a specified anime (via MyAnimeList).')
     async def anime(self, interaction: discord.Interaction, params: str):
-        print(f'{interaction.user}({interaction.user.id}) executed Anime command.')
+        print(f'{interaction.user.name}({interaction.user.id}) executed Anime command.')
 
         await interaction.response.send_message(embed=discord.Embed(
             title='Fetching Data...Please Wait.',
@@ -77,7 +77,7 @@ class AnimeModule(commands.Cog):
 
     @app_commands.command(name='manga', description='Display info about a specified manga (via MyAnimeList).')
     async def manga(self, interaction: discord.Interaction, params: str):
-        print(f'{interaction.user}({interaction.user.id}) executed Manga command.')
+        print(f'{interaction.user.name}({interaction.user.id}) executed Manga command.')
         await interaction.response.send_message(embed=discord.Embed(
             title='Fetching Data...Please Wait.',
             color=self.client.guilds[0].get_member(self.client.user.id).color

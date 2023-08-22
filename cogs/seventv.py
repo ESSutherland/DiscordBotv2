@@ -30,7 +30,7 @@ class SevenTV(commands.Cog):
     @app_commands.command(name='7tv', description='add a 7tv emote to the server')
     async def emote(self, interaction: discord.Interaction, emote_id: str):
         if interaction.user.guild_permissions.manage_emojis:
-            print(f'{interaction.user}({interaction.user.id}) executed 7TV command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed 7TV command.')
             try:
                 r = requests.get(url=f'{url}/emotes/{emote_id}', verify=False)
                 r_json = r.json()

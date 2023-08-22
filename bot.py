@@ -70,7 +70,7 @@ async def on_member_join(member):
     db.execute('SELECT username FROM banned_names')
     data = db.fetchall()
 
-    message = f'{member} has joined the server.' if not member.pending else f'{member} has joined the server. Awaiting Screening.'
+    message = f'{member.name} has joined the server.' if not member.pending else f'{member.name} has joined the server. Awaiting Screening.'
 
     for n in data[0]:
         if member.name == n:
@@ -97,7 +97,7 @@ async def on_member_remove(member):
     if await cogs.minecraft.has_whitelist(member.id):
         await cogs.minecraft.whitelist_remove_user(member.id)
 
-    leave_message = f'{member} has left the server.' if not member.pending else f'{member} has left the server. (Member was still pending.)'
+    leave_message = f'{member.name} has left the server.' if not member.pending else f'{member.name} has left the server. (Member was still pending.)'
 
     if await helpers.channel_helper.is_channel_defined('admin') and client.guilds[0].id == 462530786667659265:
         await client.guilds[0].get_channel(
@@ -126,7 +126,7 @@ async def on_member_update(before, after):
     # GAIN ROLE #
     if len(before_roles) < len(after_roles):
         new_role = next(role for role in after_roles if role not in before_roles)
-        print(f'{before}({before.id}) has gained role: {new_role}({new_role.id})')
+        print(f'{before.name}({before.id}) has gained role: {new_role}({new_role.id})')
 
         if await helpers.role_helper.is_role_defined('mod'):
             if new_role == current_guild.get_role(int(await helpers.role_helper.get_role_id('mod'))):
@@ -141,7 +141,7 @@ async def on_member_update(before, after):
     # LOSE ROLE #
     if len(before.roles) > len(after.roles):
         lost_role = next(role for role in before_roles if role not in after_roles)
-        print(f'{before}({before.id}) has lost role: {lost_role}({lost_role.id})')
+        print(f'{before.name}({before.id}) has lost role: {lost_role}({lost_role.id})')
 
         if await helpers.role_helper.is_role_defined('booster'):
             if lost_role == current_guild.get_role(int(await helpers.role_helper.get_role_id('booster'))):
@@ -165,7 +165,7 @@ async def on_member_update(before, after):
 
     if await helpers.role_helper.is_role_defined('user'):
         if after.pending is False and not await helpers.role_helper.has_role(current_guild, before.id, 'user'):
-            print(f'{after}({after.id}) has agreed to the rules.')
+            print(f'{after.name}({after.id}) has agreed to the rules.')
             await current_guild.get_member(after.id).add_roles(
                 current_guild.get_role(
                     await helpers.role_helper.get_role_id('user')
@@ -203,7 +203,7 @@ async def bot(interaction: discord.Interaction):
         description=f'This bot was made by {bot_author.mention} in Python using the discord.py API.',
         color=await get_bot_color()
     )
-    embed.set_author(name=bot_author, icon_url=bot_author.display_avatar)
+    embed.set_author(name=bot_author.name, icon_url=bot_author.display_avatar)
     embed.add_field(
         name='Twitch',
         value='https://www.twitch.tv/spiderpigethan',
@@ -217,7 +217,7 @@ async def bot(interaction: discord.Interaction):
     )
 
     await interaction.response.send_message(embed=embed)
-    print(f'{client.user}({client.user.id}) executed Bot command.')
+    print(f'{interaction.user.name}({interaction.user.id}) executed Bot command.')
 
 # SETROLE COMMAND #
 valid_roles = ['sub', 'booster', 'mod', 'user', 'movie', 'game', 'live']
@@ -229,7 +229,7 @@ for r in valid_roles:
 @app_commands.choices(role_name=role_choices)
 async def setrole(interaction: discord.Interaction, role_name: str, role: discord.Role):
     if interaction.user.guild_permissions.administrator:
-        print(f'{interaction.user}({interaction.user.id}) executed SetRole command.')
+        print(f'{interaction.user.name}({interaction.user.id}) executed SetRole command.')
         role_name = role_name.lower()
 
         if await helpers.role_helper.is_role_defined(role_name):
@@ -259,7 +259,7 @@ for c in valid_channels:
 @app_commands.choices(channel_name=channel_choices)
 async def setchannel(interaction: discord.Interaction, channel_name: str, channel: discord.TextChannel):
     if interaction.user.guild_permissions.administrator:
-        print(f'{interaction.user}({interaction.user.id}) executed SetChannel command.')
+        print(f'{interaction.user.name}({interaction.user.id}) executed SetChannel command.')
         channel_name = channel_name.lower()
 
         if await helpers.channel_helper.is_channel_defined(channel_name):
@@ -401,7 +401,7 @@ class ModuleView(View):
 @client.tree.command(guild=discord.Object(id=server_id), name='modules', description='List all modules and their status.')
 async def modules(interaction: discord.Interaction):
     if interaction.user.guild_permissions.administrator:
-        print(f'{interaction.user}({interaction.user.id}) executed Modules command.')
+        print(f'{interaction.user.name}({interaction.user.id}) executed Modules command.')
 
         embeds = []
         module_list = await get_cogs()
@@ -442,7 +442,7 @@ async def modules(interaction: discord.Interaction):
 @client.tree.command(guild=discord.Object(id=server_id), name='status', description='Change the playing status of the bot to the specified message.')
 async def status(interaction: discord.Interaction, message: str):
     if interaction.user.guild_permissions.administrator:
-        print(f'{interaction.user}({interaction.user.id}) executed Status command.')
+        print(f'{interaction.user.name}({interaction.user.id}) executed Status command.')
         global bot_message
         bot_message = message
         cfg_file = open('config.ini', 'w')
@@ -462,7 +462,7 @@ async def status(interaction: discord.Interaction, message: str):
 
 @client.tree.command(guild=discord.Object(id=server_id), name='whois', description='Get information about the user.')
 async def whois(interaction: discord.Interaction, user: discord.Member = None):
-    print(f'{interaction.user}({interaction.user.id}) executed WhoIs command.')
+    print(f'{interaction.user.name}({interaction.user.id}) executed WhoIs command.')
 
     if not user:
         user = interaction.user
@@ -471,7 +471,7 @@ async def whois(interaction: discord.Interaction, user: discord.Member = None):
         description=user.mention,
         color=user.color
     )
-    embed.set_author(name=user, icon_url=user.display_avatar)
+    embed.set_author(name=user.name, icon_url=user.display_avatar)
     created_at = user.created_at
     joined_at = user.joined_at
 
@@ -527,7 +527,7 @@ async def whois(interaction: discord.Interaction, user: discord.Member = None):
 
 @client.tree.command(guild=discord.Object(id=server_id), name='help', description='Get information about commands.')
 async def help(interaction: discord.Interaction):
-    print(f'{interaction.user}({interaction.user.id}) executed Help command.')
+    print(f'{interaction.user.name}({interaction.user.id}) executed Help command.')
     url = f'https://essutherland.github.io/bot-site/?&bot_name={client.user.name}'
     if await is_cog_enabled('moderation'):
         url += '&moderation=1'

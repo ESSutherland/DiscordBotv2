@@ -41,7 +41,7 @@ class Colors(commands.Cog):
     # COMMANDS #
     @app_commands.command(name='color', description='Allows Nitro Boosters to change the color of their name in the server.')
     async def color_command(self, interaction: discord.Interaction, input_hex: str):
-        print(f'{interaction.user}({interaction.user.id}) executed Color Command.')
+        print(f'{interaction.user.name}({interaction.user.id}) executed Color Command.')
 
         if (
             await helpers.role_helper.is_role_defined('booster') and

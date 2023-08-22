@@ -47,7 +47,7 @@ class BoostMessage(commands.Cog):
     @app_commands.command(name='boostmessage', description='Set the message that is sent in the defined general channel when a user boosts the server.')
     async def boost_message(self, interaction: discord.Interaction, message: str):
         if interaction.user.guild_permissions.administrator:
-            print(f'{interaction.user}({interaction.user.id}) executed BoostMessage command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed BoostMessage command.')
             cfg_file = open('config.ini', 'w')
             cfg.set('Bot', 'boost_message', message)
             cfg.write(cfg_file)

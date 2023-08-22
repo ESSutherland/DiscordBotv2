@@ -83,7 +83,7 @@ class CustomCommands(commands.Cog):
         if not isinstance(message.channel, discord.DMChannel):
             if await is_command(command) and not message.author.bot:
 
-                print(f'{message.author}({message.author.id}) executed custom command: {command}.')
+                print(f'{message.author.name}({message.author.id}) executed custom command: {command}.')
 
                 level = await get_level(command)
 
@@ -115,7 +115,7 @@ class CustomCommands(commands.Cog):
     @app_commands.choices(level=level_choices)
     async def custom_command(self, interaction: discord.Interaction, command_name: str, level: str, response: str):
         if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
-            print(f'{interaction.user}({interaction.user.id}) executed Command command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed Command command.')
 
             if not await is_command(command_name):
                 if level in self.valid_levels:
@@ -134,7 +134,7 @@ class CustomCommands(commands.Cog):
     @app_commands.command(name='delete', description='Delete a custom command from the server.')
     async def delete(self, interaction: discord.Interaction, command_name: str):
         if await helpers.role_helper.has_role(interaction.guild, interaction.user.id, 'mod') or interaction.user.guild_permissions.administrator:
-            print(f'{interaction.user}({interaction.user.id}) executed Delete command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed Delete command.')
 
             if await is_command(command_name):
                 await remove_command(command_name)
@@ -158,7 +158,7 @@ class CustomCommands(commands.Cog):
     @app_commands.command(name='commands', description='Shows list of the custom commands on the server.')
     async def custom_commands(self, interaction: discord.Interaction):
 
-        print(f'{interaction.user}({interaction.user.id}) executed Commands command.')
+        print(f'{interaction.user.name}({interaction.user.id}) executed Commands command.')
 
         embeds = []
         command_list = await get_commands()

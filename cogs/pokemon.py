@@ -98,7 +98,7 @@ class PokemonModule(commands.Cog):
 
     @app_commands.command(name='pokemon', description='Get information about the specified Pokemon.')
     async def _pokemon(self, interaction: discord.Interaction, name_or_id: str):
-        print(f'{interaction.user}({interaction.user.id}) executed Pokemon command.')
+        print(f'{interaction.user.name}({interaction.user.id}) executed Pokemon command.')
 
         name_or_id = name_or_id.lower()
         if ('.' in name_or_id) and (' ' in name_or_id):

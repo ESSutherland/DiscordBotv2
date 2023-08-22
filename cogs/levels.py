@@ -117,7 +117,7 @@ class Levels(commands.Cog):
     @app_commands.command(name='level', description='Displays the current level of the mentioned user.')
     async def level(self, interaction: discord.Interaction, user: discord.User = None):
 
-        print(f'{interaction.user}({interaction.user.id}) executed Level command.')
+        print(f'{interaction.user.name}({interaction.user.id}) executed Level command.')
 
         if not user:
             user = interaction.user
@@ -150,7 +150,7 @@ class Levels(commands.Cog):
     @app_commands.command(name='leaderboard', description='Displays leaderboard of player levels in the server.')
     async def leaderboard(self, interaction: discord.Interaction):
 
-        print(f'{interaction.user}({interaction.user.id}) executed Leaderboard command.')
+        print(f'{interaction.user.name}({interaction.user.id}) executed Leaderboard command.')
         embeds = []
 
         entry_per_page = 8
@@ -215,7 +215,7 @@ class Levels(commands.Cog):
     @app_commands.command(name='setexp', description='Set the amount of experience that each level takes.')
     async def set_exp(self, interaction: discord.Interaction, exp: int):
         if interaction.user.guild_permissions.administrator:
-            print(f'{interaction.user}({interaction.user.id}) executed SetExp command.')
+            print(f'{interaction.user.name}({interaction.user.id}) executed SetExp command.')
 
             if exp > 0:
                 cfg_file = open('config.ini', 'w')
@@ -233,7 +233,7 @@ class Levels(commands.Cog):
     @app_commands.command(name='user', description='Get a graphical layout of user info.')
     async def user(self, interaction: discord.Interaction, user: discord.User = None):
 
-        print(f'{interaction.user}({interaction.user.id}) executed User command.')
+        print(f'{interaction.user.name}({interaction.user.id}) executed User command.')
 
         if not user:
             user = interaction.user
@@ -248,7 +248,7 @@ class Levels(commands.Cog):
             else:
                 name += letter
 
-        user_desc = f'{name} #{user.discriminator}'
+        user_desc = f'{name}'
 
         font_size = 1
         font = ImageFont.truetype('./images/fonts/Oleg Stepanov - SimpleStamp.otf', font_size)

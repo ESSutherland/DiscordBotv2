@@ -97,7 +97,7 @@ async def on_member_remove(member):
     if await cogs.minecraft.has_whitelist(member.id):
         await cogs.minecraft.whitelist_remove_user(member.id)
 
-    leave_message = f'{member.name} has left the server.' if not member.pending else f'{member.name} has left the server. (Member was still pending.)'
+    leave_message = f'{member.name} ({member.display_name}) has left the server.' if not member.pending else f'{member.name} ({member.display_name}) has left the server. (Member was still pending.)'
 
     if await helpers.channel_helper.is_channel_defined('admin') and client.guilds[0].id == 462530786667659265:
         await client.guilds[0].get_channel(

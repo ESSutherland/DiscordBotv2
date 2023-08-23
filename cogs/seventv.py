@@ -46,6 +46,7 @@ class SevenTV(commands.Cog):
                     if 'avif' in file_list[i].get('name'):
                         try:
                             file_name = file_list[i].get('name')
+                            print(file_name)
                             emote = await interaction.guild.create_custom_emoji(name=r_json.get("name"), image=await get_emote(r_json, file_name))
                             await interaction.edit_original_response(embed=await helpers.embed_helper.create_success_embed(
                                 message=f'Emote `{r_json.get("name")}` has been added to the server!',
@@ -76,7 +77,7 @@ async def get_emote(data, file):
     image = Image.open(requests.get(emote_url, stream=True, verify=False).raw)
     buf = io.BytesIO()
     if data.get('animated'):
-        image.save(buf, 'gif', save_all=True, disposal=2, loop=0, background=None, optimize=True)
+        image.save(buf, 'gif', save_all=True, disposal=2, loop=0, background=None, interlace=False)
     else:
         image.save(buf, 'png')
 

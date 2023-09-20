@@ -86,7 +86,6 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        print(message.stickers)
         if not message.author.bot and (message.type == discord.MessageType.default or message.type == discord.MessageType.reply):
             user_id = message.author.id
             message_content = message.content

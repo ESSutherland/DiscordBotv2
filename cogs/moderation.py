@@ -86,6 +86,7 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
+        print(message.stickers)
         if not message.author.bot and (message.type == discord.MessageType.default or message.type == discord.MessageType.reply):
             user_id = message.author.id
             message_content = message.content
@@ -94,6 +95,13 @@ class Moderation(commands.Cog):
                     message_content = '(NONE)'
                 message_content += ' | attachments: '
                 for a in message.attachments:
+                    message_content += f'( {a.url} )'
+
+            if len(message.stickers) > 0:
+                if len(message_content) == 0:
+                    message_content = '(NONE)'
+                message_content += ' | stickers: '
+                for a in message.stickers:
                     message_content += f'( {a.url} )'
 
             await add_msg(user_id, message.id, message_content, message.channel.name, message.channel.id,

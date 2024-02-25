@@ -260,9 +260,9 @@ def get_genus(genera):
 def get_image(id, shiny):
     url = ''
     if shiny:
-        url = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/'
+        url = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/'
     else:
-        url = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/'
+        url = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/'
 
     return f'{url}{id}.png'
 
